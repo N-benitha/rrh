@@ -393,6 +393,7 @@ interface DashboardData {
   }[];
 }
 
+// @ts-ignore unused parameter
 function Dashboard({ setPage }: PageProps) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -549,6 +550,7 @@ function Dashboard({ setPage }: PageProps) {
             )}
             Refresh
           </button>
+          <span style={{ fontSize: '12px', color: COLORS.textMuted }}>Last refresh: {lastRefresh.toLocaleTimeString()}</span>
         </div>
       </div>
 

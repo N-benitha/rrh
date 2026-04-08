@@ -1,6 +1,16 @@
-export type Page = "landing" | "login" | "register" | "forgot" | "verify" | "help" | "about" | "dashboard" | "alerts" | "map";
+import type { Dispatch, SetStateAction } from "react";
+
+export type Page =
+  | "landing"
+  | "dashboard"
+  | "map"
+  | "login"
+  | "register"
+  | "forgot"
+  | "verify"
+  | "help"
+  | "about";
 
 export interface PageProps {
-  page?: Page;
-  setPage: (page: Page) => void;
+  setPage: Dispatch<SetStateAction<Page>>;
 }
