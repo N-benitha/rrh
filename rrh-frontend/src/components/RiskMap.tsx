@@ -341,15 +341,11 @@ function RiskMap({ setPage }: PageProps) {
     setPage('dashboard');
   };
 
-  useEffect(() => {
-    fetchMapData();
-  }, [riskLevel, riverBasin]);
-
   const fetchMapData = async () => {
     try {
       const response = await fetch(`/api/v1/dashboard/map-data?risk_level=${riskLevel}&river_basin=${riverBasin}`);
       const data = await response.json();
-      
+
       setLocations(data.high_risk_locations || []);
       setSensors(data.sensor_locations || []);
       setRiskZones(data.risk_zones || []);
@@ -361,6 +357,11 @@ function RiskMap({ setPage }: PageProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchMapData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riskLevel, riverBasin]);
 
   const setMockMapData = () => {
     setLocations([

@@ -1,0 +1,4 @@
+{
+  "json.schemaDownload.enable": false,
+  "typescript.tsdk": "rrh-frontend/node_modules/typescript/lib"
+}
