@@ -5,6 +5,7 @@ import {
   BarChart2,
   MapPin,
   FileText,
+  Users,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { id: "analytics",  label: "Analytics",   Icon: BarChart2 },
   { id: "zones",      label: "Risk Zones",  Icon: MapPin },
   { id: "reports",    label: "Reports",     Icon: FileText },
+  { id: "users",      label: "Users",       Icon: Users },
 ];
 
 const NAV_BOTTOM = [

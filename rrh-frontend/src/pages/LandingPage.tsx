@@ -94,6 +94,7 @@ const CSS = `
   .lp-fc:nth-child(3n){border-right:none}
   .lp-fc:nth-child(n+4){border-bottom:none}
   .lp-fn{font-family:var(--mono);font-size:10px;font-weight:700;color:#f57c00;letter-spacing:.1em;margin-bottom:11px}
+  .lp-fc-emoji{font-size:30px;margin-bottom:10px;display:block;line-height:1}
   .lp-fname{font-family:var(--serif);font-size:15px;font-weight:700;color:#0c1a2e;margin-bottom:5px}
   .lp-ft{font-size:13px;color:#546e7a;line-height:1.7}
 
@@ -138,7 +139,46 @@ const CSS = `
     .lp-fg,.lp-pg{grid-template-columns:1fr}
     .lp-sec{padding:48px 20px}
   }
+
+  /* ══ HERO ENHANCEMENTS ══ */
+
+  /* radar eyebrow */
+  .lp-eye3{display:inline-flex;align-items:center;gap:11px;background:rgba(79,195,247,.07);border:1px solid rgba(79,195,247,.24);border-radius:24px;padding:7px 16px 7px 10px;width:fit-content}
+  .lp-radar{position:relative;width:20px;height:20px;flex-shrink:0}
+  .lp-rring{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(79,195,247,.65);animation:lp-rexp 2.2s ease-out infinite}
+  .lp-rring2{animation-delay:.7s;border-color:rgba(79,195,247,.35)}
+  @keyframes lp-rexp{0%{transform:scale(.45);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+  .lp-rdot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:#4fc3f7;box-shadow:0 0 8px rgba(79,195,247,.9)}
+  .lp-eye3-t{font-family:var(--mono);font-size:9px;font-weight:700;color:#4fc3f7;letter-spacing:.14em;text-transform:uppercase}
+
+  /* headline first-line gradient */
+  .lp-h1-blue{background:linear-gradient(128deg,#ffffff 20%,#b3e5fc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+  /* live ticker strip */
+  .lp-ticker{display:flex;align-items:center;gap:10px;padding:8px 13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:6px}
+  .lp-live-b{background:#ef4444;border-radius:3px;padding:2px 8px;font-family:var(--mono);font-size:7.5px;font-weight:800;color:#fff;letter-spacing:.16em;flex-shrink:0;box-shadow:0 0 8px rgba(239,68,68,.5)}
+  .lp-ticker-t{font-family:var(--mono);font-size:8.5px;color:rgba(255,255,255,.35);letter-spacing:.04em;line-height:1.5}
+
+  /* accent left border on copy panel */
+  .lp-copy{position:relative}
+  .lp-copy-accent{position:absolute;top:0;left:0;bottom:0;width:2px;background:linear-gradient(180deg,transparent 0%,#4fc3f7 25%,#f57c00 75%,transparent 100%);border-radius:2px}
+
+  /* map grid overlay */
+  .lp-gridov{position:absolute;inset:0;background-image:linear-gradient(rgba(79,195,247,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(79,195,247,.04) 1px,transparent 1px);background-size:22px 22px;z-index:4;pointer-events:none}
+
+  /* map scan line */
+  @keyframes lp-scan2{0%{top:28px;opacity:.5}100%{top:calc(100% - 24px);opacity:.9}}
+  .lp-scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(79,195,247,.25) 15%,rgba(79,195,247,.75) 50%,rgba(79,195,247,.25) 85%,transparent 100%);animation:lp-scan2 7s ease-in-out infinite alternate;z-index:20;pointer-events:none;box-shadow:0 0 10px rgba(79,195,247,.45)}
+
+  /* map corner data readouts */
+  .lp-cdata{position:absolute;background:rgba(4,12,24,.9);border:1px solid rgba(79,195,247,.2);border-radius:6px;padding:8px 12px;backdrop-filter:blur(8px);z-index:60}
+  .lp-cdata-v{font-family:var(--mono);font-size:16px;font-weight:700;color:#4fc3f7;line-height:1;display:flex;align-items:baseline;gap:3px}
+  .lp-cdata-u{font-size:9px;color:rgba(79,195,247,.6);font-weight:500}
+  .lp-cdata-l{font-family:var(--mono);font-size:7px;color:rgba(255,255,255,.3);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
 `;
+
+
+const FEATURE_EMOJIS = ["📡", "🤖", "🗺️", "🔌", "🚨", "📊"];
 
 export default function LandingPage({ setPage }: PageProps) {
   const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -154,13 +194,22 @@ export default function LandingPage({ setPage }: PageProps) {
 
           {/* LEFT — headline + description + buttons */}
           <div className="lp-copy">
-            <div className="lp-eye">
-              <span className="lp-edot" />
-              Live Flood Monitoring · Rwanda
+            {/* accent border */}
+            <div className="lp-copy-accent" />
+
+            {/* radar eyebrow */}
+            <div className="lp-eye3">
+              <div className="lp-radar">
+                <div className="lp-rring" />
+                <div className="lp-rring lp-rring2" />
+                <div className="lp-rdot" />
+              </div>
+              <span className="lp-eye3-t">Live Flood Monitoring · Rwanda</span>
             </div>
 
             <h1 className="lp-h1">
-              Predict Floods.<br /><em>Protect Lives.</em>
+              <span className="lp-h1-blue">Predict Floods.</span>
+              <br /><em>Protect Lives.</em>
             </h1>
 
             <p className="lp-desc">
@@ -168,6 +217,12 @@ export default function LandingPage({ setPage }: PageProps) {
               to deliver real-time flood risk intelligence across Rwanda's most vulnerable
               river basins — before disaster strikes.
             </p>
+
+            {/* live update ticker */}
+            <div className="lp-ticker">
+              <span className="lp-live-b">LIVE</span>
+              <span className="lp-ticker-t">Satellite synced · Sensor update in 13 min · 5 zones active · 3 alerts</span>
+            </div>
 
             <div className="lp-btns">
               <button className="lp-btn-o" onClick={() => setPage("register")}>Get Access →</button>
@@ -200,6 +255,21 @@ export default function LandingPage({ setPage }: PageProps) {
             <div className="lp-mbar">
               <span className="lp-mbar-t">RRH · RIVER BASIN MAP · RWANDA</span>
               <span className="lp-mbar-time">{now} CAT</span>
+            </div>
+
+            {/* grid overlay */}
+            <div className="lp-gridov" />
+            {/* scanning sweep line */}
+            <div className="lp-scanline" />
+            {/* corner data — rainfall */}
+            <div className="lp-cdata" style={{ top: 50, left: 12 }}>
+              <div className="lp-cdata-v">24.7<span className="lp-cdata-u">mm</span></div>
+              <div className="lp-cdata-l">24h Rainfall · Kigali</div>
+            </div>
+            {/* corner data — water level */}
+            <div className="lp-cdata" style={{ top: 50, right: 120 }}>
+              <div className="lp-cdata-v">+1.8<span className="lp-cdata-u">m</span></div>
+              <div className="lp-cdata-l">Nyabugogo Level</div>
             </div>
 
             <svg
@@ -383,6 +453,7 @@ export default function LandingPage({ setPage }: PageProps) {
           <div className="lp-fg">
             {FEATURES.map((f, i) => (
               <div className="lp-fc" key={i}>
+                <span className="lp-fc-emoji">{FEATURE_EMOJIS[i]}</span>
                 <div className="lp-fn">0{i + 1}</div>
                 <div className="lp-fname">{f.name}</div>
                 <div className="lp-ft">{f.text}</div>
@@ -441,4 +512,4 @@ export default function LandingPage({ setPage }: PageProps) {
       <Footer />
     </div>
   );
-}
+} 

@@ -105,7 +105,6 @@ export default function DashboardOverview() {
             <AlertsList
               alerts={alerts.map((a) => ({
                 level: a.level,
-                icon: a.icon,
                 title: a.title,
                 description: a.description,
                 zone: a.zone,

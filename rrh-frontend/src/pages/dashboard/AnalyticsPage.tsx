@@ -15,24 +15,24 @@ export default function AnalyticsPage() {
       {/* Key Metrics */}
       <div className="ana-metrics">
         <div className="ana-metric-card">
-          <div className="ana-metric-label">Avg Risk Score</div>
+          <div className="ana-metric-label">⚠️ Avg Risk Score</div>
           <div className="ana-metric-val">{totalRisk}%</div>
           <div className="ana-metric-change positive">↑ 2.3% this week</div>
         </div>
         <div className="ana-metric-card">
-          <div className="ana-metric-label">Critical Zones</div>
+          <div className="ana-metric-label">🔴 Critical Zones</div>
           <div className="ana-metric-val" style={{ color: "#DC2626" }}>
             {criticalCount}
           </div>
           <div className="ana-metric-change">Out of {ZONES.length} zones</div>
         </div>
         <div className="ana-metric-card">
-          <div className="ana-metric-label">Avg Rainfall</div>
+          <div className="ana-metric-label">🌧️ Avg Rainfall</div>
           <div className="ana-metric-val">{avgRainfall}mm</div>
           <div className="ana-metric-change positive">↑ 12% above avg</div>
         </div>
         <div className="ana-metric-card">
-          <div className="ana-metric-label">Model Accuracy</div>
+          <div className="ana-metric-label">🤖 Model Accuracy</div>
           <div className="ana-metric-val">91%</div>
           <div className="ana-metric-change positive">↑ 0.8% this week</div>
         </div>
@@ -42,13 +42,13 @@ export default function AnalyticsPage() {
       <div className="ana-row-2">
         {/* Rainfall Trends */}
         <div className="ana-panel">
-          <h2 className="ana-panel-title">Weekly Rainfall Distribution</h2>
+          <h2 className="ana-panel-title">🌧️ Weekly Rainfall Distribution</h2>
           <BarChart data={RAINFALL_DATA} />
         </div>
 
         {/* River Level Forecast */}
         <div className="ana-panel">
-          <h2 className="ana-panel-title">River Level Forecast - 24h</h2>
+          <h2 className="ana-panel-title">💧 River Level Forecast - 24h</h2>
           <LineChart data={RIVER_DATA} color="#3B82F6" unit="m" />
         </div>
       </div>
@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
       {/* Zone Selection & Analysis */}
       <div className="ana-panel">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-          <h2 className="ana-panel-title">Zone Analysis</h2>
+          <h2 className="ana-panel-title">📍 Zone Analysis</h2>
           <div style={{ display: "flex", gap: "8px" }}>
             {["24h", "7d", "30d"].map((range) => (
               <button
@@ -98,15 +98,15 @@ export default function AnalyticsPage() {
               <div className="ana-zone-stats">
                 <div>
                   <div className="ana-zone-stat-val">{zone.score}%</div>
-                  <div className="ana-zone-stat-lbl">Risk</div>
+                  <div className="ana-zone-stat-lbl">⚠️ Risk</div>
                 </div>
                 <div>
                   <div className="ana-zone-stat-val">{zone.rainfall}</div>
-                  <div className="ana-zone-stat-lbl">Rainfall</div>
+                  <div className="ana-zone-stat-lbl">🌧️ Rainfall</div>
                 </div>
                 <div>
                   <div className="ana-zone-stat-val">{zone.river}</div>
-                  <div className="ana-zone-stat-lbl">River</div>
+                  <div className="ana-zone-stat-lbl">💧 River</div>
                 </div>
               </div>
             </div>
@@ -116,13 +116,13 @@ export default function AnalyticsPage() {
 
       {/* ML Model Performance */}
       <div className="ana-panel">
-        <h2 className="ana-panel-title">ML Model Accuracy - 7 Day Trend</h2>
+        <h2 className="ana-panel-title">🤖 ML Model Accuracy - 7 Day Trend</h2>
         <LineChart data={ML_HISTORY.map((h) => ({ t: h.date, v: h.acc }))} color="#10B981" unit="%" />
       </div>
 
       {/* Comparison Table */}
       <div className="ana-panel">
-        <h2 className="ana-panel-title">All Zones Comparison</h2>
+        <h2 className="ana-panel-title">📊 All Zones Comparison</h2>
         <table className="ana-comparison-table">
           <thead>
             <tr>

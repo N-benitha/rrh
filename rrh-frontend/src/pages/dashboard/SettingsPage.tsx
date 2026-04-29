@@ -40,7 +40,7 @@ export default function SettingsPage() {
         <div className="set-toggle-group">
           <div className="set-toggle-item">
             <div>
-              <div className="set-toggle-label">Email Alerts</div>
+              <div className="set-toggle-label">📧 Email Alerts</div>
               <div className="set-toggle-desc">Receive alerts via email</div>
             </div>
             <label className="set-toggle">
@@ -57,7 +57,7 @@ export default function SettingsPage() {
 
           <div className="set-toggle-item">
             <div>
-              <div className="set-toggle-label">SMS Alerts</div>
+              <div className="set-toggle-label">💬 SMS Alerts</div>
               <div className="set-toggle-desc">Receive alerts via SMS</div>
             </div>
             <label className="set-toggle">
@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
           <div className="set-toggle-item">
             <div>
-              <div className="set-toggle-label">In-App Notifications</div>
+              <div className="set-toggle-label">🔔 In-App Notifications</div>
               <div className="set-toggle-desc">Show notifications in dashboard</div>
             </div>
             <label className="set-toggle">
@@ -91,7 +91,7 @@ export default function SettingsPage() {
 
           <div className="set-toggle-item">
             <div>
-              <div className="set-toggle-label">Daily Digest</div>
+              <div className="set-toggle-label">📰 Daily Digest</div>
               <div className="set-toggle-desc">Summary of daily metrics</div>
             </div>
             <label className="set-toggle">
@@ -108,7 +108,7 @@ export default function SettingsPage() {
 
           <div className="set-toggle-item">
             <div>
-              <div className="set-toggle-label">Critical Alerts Only</div>
+              <div className="set-toggle-label">🚨 Critical Alerts Only</div>
               <div className="set-toggle-desc">Only notify for critical issues</div>
             </div>
             <label className="set-toggle">
@@ -205,7 +205,7 @@ export default function SettingsPage() {
             onClick={() => setTheme("light")}
           >
             <div className="set-theme-preview light"></div>
-            <div className="set-theme-name">Light Mode</div>
+            <div className="set-theme-name">☀️ Light Mode</div>
             <div className="set-theme-desc">Light background with dark text</div>
           </button>
 
@@ -214,7 +214,7 @@ export default function SettingsPage() {
             onClick={() => setTheme("dark")}
           >
             <div className="set-theme-preview dark"></div>
-            <div className="set-theme-name">Dark Mode</div>
+            <div className="set-theme-name">🌙 Dark Mode</div>
             <div className="set-theme-desc">Dark background with light text</div>
           </button>
         </div>

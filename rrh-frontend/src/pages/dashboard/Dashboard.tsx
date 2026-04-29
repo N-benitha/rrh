@@ -18,6 +18,7 @@ import { PersonalInfoPage } from "./PersonalInfoPage";
 import { ChangePasswordPage } from "./ChangePasswordPage";
 import { AccountActionsPage } from "./AccountActionsPage";
 import { SignOutPage } from "./SignOutPage";
+import UserManagementPage from "./UserManagementPage";
 import LiveTickerBanner from "../../components/dashboard/LiveTickerBanner";
 
 export default function Dashboard({ setPage }: PageProps) {
@@ -30,6 +31,7 @@ export default function Dashboard({ setPage }: PageProps) {
     analytics: "Advanced Analytics",
     zones: "Risk Zones",
     reports: "Reports",
+    users: "User Management",
     settings: "Settings & Preferences",
     notifications: "Notification Preferences",
     thresholds: "Alert Thresholds",
@@ -61,9 +63,10 @@ export default function Dashboard({ setPage }: PageProps) {
             {activeNav === "alerts" && <AlertsManagementPage />}
             {activeNav === "analytics" && <AnalyticsPage />}
             {activeNav === "zones" && (
-              <ZoneDetailPage zoneId={1} onBack={() => setActiveNav("overview")} />
+              <ZoneDetailPage zoneId={1} onBack={() => setActiveNav("overview")} onNavigate={setActiveNav} />
             )}
             {activeNav === "reports" && <ReportsPage />}
+            {activeNav === "users" && <UserManagementPage />}
             {activeNav === "settings" && <SettingsPage />}
             {activeNav === "notifications" && <NotificationsPage />}
             {activeNav === "thresholds" && <ThresholdsPage />}

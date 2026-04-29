@@ -50,6 +50,12 @@ export default function LoginPage({ setPage }: PageProps) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
 
+  const fillDemo = () => {
+    setEmail("yvettetuyizere@gmail.com");
+    setPw("yvette123");
+    setErr("");
+  };
+
   const submit = async () => {
     if (!email || !pw) {
       setErr("Please fill in all fields.");
@@ -139,6 +145,9 @@ export default function LoginPage({ setPage }: PageProps) {
             )}
           </button>
           <div className="form-div">or</div>
+          <button type="button" className="btn-google" onClick={fillDemo} style={{ marginBottom: 8, background: "#f0fdf4", borderColor: "#86efac", color: "#15803d" }}>
+            🚀 Quick Demo Login
+          </button>
           <button className="btn-google">
             <svg width="16" height="16" viewBox="0 0 48 48">
               <path

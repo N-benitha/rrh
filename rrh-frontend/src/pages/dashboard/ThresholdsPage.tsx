@@ -103,25 +103,25 @@ export const ThresholdsPage: React.FC = () => {
       </div>
 
       <div className="thresh-presets">
-        <h3>Quick Presets</h3>
+        <h3>🎯 Quick Presets</h3>
         <div className="thresh-preset-buttons">
           <button
             className="preset-btn"
             onClick={() => setThresholds({ rainfall: 30, riverLevel: 45, riskScore: 50 })}
           >
-            Sensitive
+            🎯 Sensitive
           </button>
           <button
             className="preset-btn"
             onClick={() => setThresholds({ rainfall: 50, riverLevel: 70, riskScore: 75 })}
           >
-            Moderate
+            ⚖️ Moderate
           </button>
           <button
             className="preset-btn"
             onClick={() => setThresholds({ rainfall: 80, riverLevel: 100, riskScore: 90 })}
           >
-            Relaxed
+            😌 Relaxed
           </button>
         </div>
       </div>
