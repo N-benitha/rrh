@@ -177,11 +177,12 @@ export function useAnalytics(range: "1d" | "7d" | "30d" = "7d") {
       .getAnalytics(range)
       .then((result) => {
         if (result) {
+          const r = result as unknown as AnalyticsData;
           setData((prev) => ({
-            rainfall: result.rainfall?.length ? result.rainfall : prev.rainfall,
-            river: result.river?.length ? result.river : prev.river,
-            ml_history: result.ml_history?.length ? result.ml_history : prev.ml_history,
-            risk_distribution: result.risk_distribution || prev.risk_distribution,
+            rainfall: r.rainfall?.length ? r.rainfall : prev.rainfall,
+            river: r.river?.length ? r.river : prev.river,
+            ml_history: r.ml_history?.length ? r.ml_history : prev.ml_history,
+            risk_distribution: r.risk_distribution || prev.risk_distribution,
           }));
         }
       })

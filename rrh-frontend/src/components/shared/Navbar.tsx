@@ -1,55 +1,47 @@
 
 import type { Page, PageProps } from "../../types";
 
-/**
- * Navigation bar component for landing pages
- */
 export function Navbar({ setPage, cur }: PageProps & { cur: Page }) {
   const navCSS = `
     .nav{
       position:fixed;top:0;left:0;right:0;z-index:800;
-      height:56px;
-      background:var(--s900);
-      border-bottom:1px solid var(--s700);
-      box-shadow:0 2px 12px rgba(0,0,0,.2);
+      height:58px;
+      background:#0a1628;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      box-shadow:0 1px 20px rgba(0,0,0,.35);
     }
     .nav-inner{
-      max-width:1320px;margin:0 auto;height:100%;
-      display:flex;align-items:center;padding:0 28px;gap:0
+      max-width:1400px;margin:0 auto;height:100%;
+      display:flex;align-items:center;padding:0 32px;
     }
-    .nav-logo{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0}
-    .nav-mark{
-      width:34px;height:34px;border-radius:9px;
-      background:linear-gradient(145deg,#0d2240 0%,#091929 100%);
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
-      box-shadow:0 0 0 1px rgba(79,195,247,.22),0 2px 14px rgba(0,0,0,.45)
-    }
-    .nav-mark svg{width:18px;height:18px}
-    .nav-name{font-family:var(--serif);font-size:14px;font-weight:700;color:#fff;line-height:1.2;letter-spacing:-.01em}
-    .nav-tag{font-family:var(--mono);font-size:8px;color:#4fc3f7;letter-spacing:.1em;text-transform:uppercase;display:block;opacity:.8}
-    .nav-sep{width:1px;height:20px;background:var(--s600);margin:0 22px;flex-shrink:0}
-    .nav-links{display:flex;align-items:center;gap:2px;margin-right:auto}
+    .nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0}
+    .nav-logo-img{height:42px;width:42px;object-fit:contain;display:block;border-radius:6px;background:#fff;padding:2px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+    .nav-name{font-family:var(--serif);font-size:14.5px;font-weight:700;color:#fff;line-height:1.2;letter-spacing:-.01em}
+    .nav-sub{font-family:var(--mono);font-size:7.5px;color:rgba(249,115,22,.8);letter-spacing:.12em;text-transform:uppercase;display:block;margin-top:1px}
+    .nav-space{flex:1}
+    .nav-right{display:flex;align-items:center;gap:2px}
     .nav-lnk{
-      padding:5px 12px;border-radius:var(--r4);
-      font-family:var(--serif);font-size:13px;font-weight:400;color:var(--s200);
-      background:none;border:none;transition:all .15s
+      padding:6px 13px;border-radius:6px;
+      font-family:var(--serif);font-size:13px;font-weight:400;color:rgba(255,255,255,.5);
+      background:none;border:none;cursor:pointer;transition:color .14s,background .14s
     }
-    .nav-lnk:hover{color:#fff;background:var(--s700)}
-    .nav-lnk.cur{color:var(--a200);background:rgba(249,115,22,.15);font-weight:600}
-    .nav-right{display:flex;align-items:center;gap:7px}
+    .nav-lnk:hover{color:#fff;background:rgba(255,255,255,.07)}
+    .nav-lnk.cur{color:#f57c00;font-weight:600}
+    .nav-div{width:1px;height:18px;background:rgba(255,255,255,.1);margin:0 10px;flex-shrink:0}
     .btn-out{
-      padding:6px 14px;border-radius:var(--r4);
+      padding:7px 16px;border-radius:6px;
       font-family:var(--serif);font-size:13px;font-weight:500;
-      color:var(--s200);border:1px solid var(--s600);background:transparent;transition:all .15s
+      color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.14);background:transparent;
+      cursor:pointer;transition:all .14s
     }
-    .btn-out:hover{border-color:var(--s400);color:#fff;background:var(--s700)}
+    .btn-out:hover{border-color:rgba(255,255,255,.32);color:#fff;background:rgba(255,255,255,.06)}
     .btn-fill{
-      padding:6px 16px;border-radius:var(--r4);
-      font-family:var(--serif);font-size:13px;font-weight:600;
-      color:#fff;border:none;background:var(--a300);transition:all .15s;
-      box-shadow:0 2px 8px rgba(249,115,22,.3)
+      padding:7px 18px;border-radius:6px;margin-left:6px;
+      font-family:var(--serif);font-size:13px;font-weight:700;
+      color:#fff;border:none;background:#f57c00;cursor:pointer;
+      box-shadow:0 2px 10px rgba(245,124,0,.35);transition:background .14s,transform .14s
     }
-    .btn-fill:hover{background:var(--a400)}
+    .btn-fill:hover{background:#e65100;transform:translateY(-1px)}
   `;
 
   return (
@@ -57,42 +49,30 @@ export function Navbar({ setPage, cur }: PageProps & { cur: Page }) {
       <style>{navCSS}</style>
       <nav className="nav">
         <div className="nav-inner">
+
+          {/* Logo — far left */}
           <div className="nav-logo" onClick={() => setPage("landing")}>
-            <div className="nav-mark">
-              {/* RRH Shield-Wave logo mark */}
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Shield outline — resilience */}
-                <path d="M12 2.5L4 6v7.5C4 18.5 7.6 22 12 23c4.4-1 8-4.5 8-9.5V6L12 2.5z"
-                  fill="rgba(79,195,247,.12)" stroke="rgba(79,195,247,.88)" strokeWidth="1.4" strokeLinejoin="round"/>
-                {/* River wave — flood monitoring */}
-                <path d="M6.5 15.5Q9 12.5 12 15.5Q15 18.5 17.5 15.5"
-                  stroke="rgba(255,255,255,.92)" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
-                {/* Live alert dot — orange signal */}
-                <circle cx="12" cy="9.5" r="2.8" fill="#f57c00"/>
-                <circle cx="12" cy="9.5" r="1.3" fill="white"/>
-              </svg>
-            </div>
+            <img src="/logo.png" alt="RRH" className="nav-logo-img" />
             <div>
               <div className="nav-name">Rwanda Resilience Hub</div>
-              <span className="nav-tag">Flood Intelligence</span>
+              <span className="nav-sub">Flood Intelligence</span>
             </div>
           </div>
-          <div className="nav-sep" />
-          <div className="nav-links">
+
+          <div className="nav-space" />
+
+          {/* All navigation + auth on the right */}
+          <div className="nav-right">
             {([["landing","Home"],["about","About"],["help","Help"]] as [Page,string][]).map(([p, label]) => (
               <button key={p} className={`nav-lnk${cur === p ? " cur" : ""}`} onClick={() => setPage(p)}>
                 {label}
               </button>
             ))}
+            <div className="nav-div" />
+            <button className="btn-out" onClick={() => setPage("login")}>Sign in</button>
+            <button className="btn-fill" onClick={() => setPage("register")}>Get access</button>
           </div>
-          <div className="nav-right">
-            <button className="btn-out" onClick={() => setPage("login")}>
-              Sign in
-            </button>
-            <button className="btn-fill" onClick={() => setPage("register")}>
-              Get access
-            </button>
-          </div>
+
         </div>
       </nav>
     </div>
