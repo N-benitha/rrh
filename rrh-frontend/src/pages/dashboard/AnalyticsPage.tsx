@@ -1,14 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LineChart, BarChart } from "../../components/dashboard/Charts";
 import { ZONES, RAINFALL_DATA, RIVER_DATA, ML_HISTORY } from "../../constants";
+import { apiService } from "../../services/api";
 
 export default function AnalyticsPage() {
   const [selectedZone, setSelectedZone] = useState<number>(1);
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
 
+  const [rainfallData, setRainfallData] = useState<{ day: string; mm: number }[]>(
+    RAINFALL_DATA.map((d) => ({ day: d.day, mm: d.mm }))
+  );
+  const [rainfallSource, setRainfallSource] = useState<"mock" | "NASA POWER">("mock");
+  const [rainfallLoading, setRainfallLoading] = useState(true);
+
+  useEffect(() => {
+    setRainfallLoading(true);
+    apiService
+      .getNasaRainfall(7)
+      .then((res) => {
+        if (res.rainfall && res.rainfall.length > 0) {
+          setRainfallData(res.rainfall);
+          setRainfallSource("NASA POWER");
+        }
+      })
+      .catch(() => {/* keep mock */})
+      .finally(() => setRainfallLoading(false));
+  }, []);
+
   const totalRisk = Math.round(ZONES.reduce((sum, z) => sum + z.score, 0) / ZONES.length);
   const criticalCount = ZONES.filter((z) => z.level === "CRITICAL").length;
-  const avgRainfall = Math.round(RAINFALL_DATA.reduce((sum, d) => sum + d.mm, 0) / RAINFALL_DATA.length);
+  const avgRainfall = Math.round(rainfallData.reduce((sum, d) => sum + d.mm, 0) / (rainfallData.length || 1));
 
   return (
     <div className="db-analytics">
@@ -29,7 +50,9 @@ export default function AnalyticsPage() {
         <div className="ana-metric-card">
           <div className="ana-metric-label">🌧️ Avg Rainfall</div>
           <div className="ana-metric-val">{avgRainfall}mm</div>
-          <div className="ana-metric-change positive">↑ 12% above avg</div>
+          <div className="ana-metric-change" style={{ color: rainfallSource === "NASA POWER" ? "#10B981" : undefined }}>
+            {rainfallSource === "NASA POWER" ? "● Live NASA POWER" : "Mock data"}
+          </div>
         </div>
         <div className="ana-metric-card">
           <div className="ana-metric-label">🤖 Model Accuracy</div>
@@ -42,8 +65,21 @@ export default function AnalyticsPage() {
       <div className="ana-row-2">
         {/* Rainfall Trends */}
         <div className="ana-panel">
-          <h2 className="ana-panel-title">🌧️ Weekly Rainfall Distribution</h2>
-          <BarChart data={RAINFALL_DATA} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+            <h2 className="ana-panel-title" style={{ marginBottom: 0 }}>🌧️ Weekly Rainfall Distribution</h2>
+            <span style={{
+              fontSize: "11px",
+              fontFamily: "var(--mono)",
+              padding: "3px 8px",
+              borderRadius: "4px",
+              background: rainfallSource === "NASA POWER" ? "#d1fae5" : "#f3f4f6",
+              color: rainfallSource === "NASA POWER" ? "#065f46" : "#6b7280",
+              border: `1px solid ${rainfallSource === "NASA POWER" ? "#6ee7b7" : "#e5e7eb"}`,
+            }}>
+              {rainfallLoading ? "Fetching…" : rainfallSource === "NASA POWER" ? "● NASA POWER Live" : "Mock data"}
+            </span>
+          </div>
+          <BarChart data={rainfallData} />
         </div>
 
         {/* River Level Forecast */}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FAQS } from "../constants";
-import { Navbar, Footer } from "../components/shared";
+import { Footer } from "../components/shared";
 import type { PageProps } from "../types";
 
 const CSS = `
@@ -61,18 +61,17 @@ export default function HelpPage({ setPage }: PageProps) {
   );
 
   const cats = [
-    ["01", "Getting Started", "Account setup, login, and access"],
-    ["02", "Flood Data", "Risk levels, data sources, and maps"],
-    ["03", "Alerts", "Set up and manage flood alerts"],
-    ["04", "ML Predictions", "How the model works and reading output"],
-    ["05", "Account & Security", "Password reset and account settings"],
-    ["06", "Contact Team", "Reach Benitha or Yvette directly"],
+    ["Getting Started", "Account setup, login, and access"],
+    [ "Flood Data", "Risk levels, data sources, and maps"],
+    ["Alerts", "Set up and manage flood alerts"],
+    [ "ML Predictions", "How the model works and reading output"],
+    [ "Account & Security", "Password reset and account settings"],
+    ["Contact Team", "How to reach out for support or inquiries"],
   ];
 
   return (
     <div className="page">
       <style>{CSS}</style>
-      <Navbar setPage={setPage} cur="help" />
       <div className="inner-top">
         <div className="inner-top-in">
           <div className="sec-kicker" style={{ color: "rgba(255,255,255,.3)" }}>

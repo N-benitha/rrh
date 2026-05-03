@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { apiService } from "../../services/api";
 import type { Page } from "../../types";
 
 interface SidebarProps {
@@ -37,10 +38,7 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
     <div className="db-sidebar">
       <div className="sb-brand">
         <div className="sb-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ width: "20px", height: "20px", color: "#F59E0B" }}>
-            <path d="M12 22C12 22 4 16 4 10a8 8 0 0 1 16 0c0 6-8 12-8 12z" />
-            <circle cx="12" cy="10" r="2.5" />
-          </svg>
+          <img src="/logo.png" alt="RRH" style={{ width: "24px", height: "24px", objectFit: "contain", display: "block" }} />
         </div>
         <div>
           <div className="sb-bname">Rwanda Resilience Hub</div>
@@ -69,7 +67,14 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
           <button
             key={id}
             className="sb-item"
-            onClick={() => (id === "logout" ? setPage("landing") : setActive(id))}
+            onClick={() => {
+              if (id === "logout") {
+                apiService.clearAuth();
+                setPage("landing");
+              } else {
+                setActive(id);
+              }
+            }}
           >
             <Icon size={16} />
             <span>{label}</span>

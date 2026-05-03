@@ -1,4 +1,4 @@
-import { Navbar, Footer } from "../components/shared";
+import { Footer } from "../components/shared";
 import type { PageProps } from "../types";
 
 const CSS = `
@@ -52,7 +52,6 @@ export default function AboutPage({ setPage }: PageProps) {
   return (
     <div className="page">
       <style>{CSS}</style>
-      <Navbar setPage={setPage} cur="about" />
 
       {/* Hero */}
       <div className="inner-top">
@@ -132,12 +131,12 @@ export default function AboutPage({ setPage }: PageProps) {
           <h2 className="sec-h2">Everything needed for flood risk management</h2>
           <div className="feat-grid">
             {[
-              ["📡", "Live Zone Monitoring",       "Real-time rainfall, river level, and risk score tracking across all monitored wetland and river-basin zones."],
-              ["🤖", "ML Risk Prediction",         "Random Forest classifier trained on historical flood data delivers 91%+ accuracy risk scores, updated every 15 minutes."],
-              ["🗺️", "Interactive Risk Map",       "Leaflet-based map showing all zones colour-coded by risk level, with clickable pins for zone detail."],
-              ["🚨", "Automated Alert System",     "Configurable alert rules trigger notifications for rainfall, river level, and risk-score thresholds across any zone."],
-              ["📊", "Reports & Analytics",        "Generate daily, weekly, and monthly PDF or Excel reports; view trend charts for rainfall, river level, and ML accuracy."],
-              ["👥", "Role-Based Access Control",  "Admin, Analyst, Zone Manager, and Observer roles with fine-grained permission controls per dashboard module."],
+              [ "Live Zone Monitoring",       "Real-time rainfall, river level, and risk score tracking across all monitored wetland and river-basin zones."],
+              [ "ML Risk Prediction",         "Random Forest classifier trained on historical flood data delivers 91%+ accuracy risk scores, updated every 15 minutes."],
+              [ "Interactive Risk Map",       "Leaflet-based map showing all zones colour-coded by risk level, with clickable pins for zone detail."],
+              [ "Automated Alert System",     "Configurable alert rules trigger notifications for rainfall, river level, and risk-score thresholds across any zone."],
+              [ "Reports & Analytics",        "Generate daily, weekly, and monthly PDF or Excel reports; view trend charts for rainfall, river level, and ML accuracy."],
+              [ "Role-Based Access Control",  "Admin, Analyst, Zone Manager, and Observer roles with fine-grained permission controls per dashboard module."],
             ].map(([icon, title, desc]) => (
               <div className="feat-card" key={title as string}>
                 <div className="feat-icon">{icon}</div>
@@ -153,24 +152,7 @@ export default function AboutPage({ setPage }: PageProps) {
       <section className="sec">
         <div className="sec-in">
           <div className="about-grid">
-            <div>
-              <div className="sec-kicker">Technology stack</div>
-              <h2 className="sec-h2">Built on modern, open-source tools</h2>
-              {[
-                ["Backend API",      "FastAPI · Python 3.11 · SQLAlchemy · Alembic"],
-                ["Database",         "PostgreSQL (Render managed cloud DB)"],
-                ["ML Pipeline",      "scikit-learn · Random Forest · Logistic Regression"],
-                ["Data Sources",     "NASA POWER · OpenWeatherMap · IoT Simulation"],
-                ["Frontend",         "React 19 · TypeScript · Vite · Leaflet"],
-                ["Auth",             "JWT (HS256) · Role-based access control"],
-                ["Deployment",       "Render (API + DB) · Vercel (Frontend)"],
-              ].map(([k, v]) => (
-                <div className="meta-row" key={k as string}>
-                  <span className="meta-k">{k}</span>
-                  <span className="meta-v">{v}</span>
-                </div>
-              ))}
-            </div>
+        
             <div>
               <div className="sec-kicker">Monitored zones</div>
               <h2 className="sec-h2">Rwanda's highest-risk flood areas</h2>

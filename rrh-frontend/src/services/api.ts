@@ -98,6 +98,58 @@ class APIService {
     return this.get<unknown[]>("/alerts");
   }
 
+  async getBasinPredictions() {
+    return this.get<{
+      predictions: {
+        basin: string;
+        zone: string;
+        risk_level: "low" | "medium" | "high";
+        confidence: number;
+        model_type: string;
+        features: {
+          rainfall_24h: number;
+          water_level: number;
+          humidity: number;
+          soil_saturation: number;
+        };
+      }[];
+      weather_source: string;
+      model_version: string;
+      fetched_at: string;
+    }>("/flood-risk/basin-predictions");
+  }
+
+  async getNasaRainfall(days: number = 7) {
+    return this.get<{
+      rainfall: { day: string; mm: number }[];
+      source: string;
+      basins?: number;
+      fetched_at?: string;
+      error?: string;
+    }>(`/weather/nasa-rainfall?days=${days}`);
+  }
+
+  async getWeatherAlerts() {
+    return this.get<{
+      alerts: {
+        id: string;
+        level: string;
+        title: string;
+        description: string;
+        zone: string;
+        time: string;
+        status: string;
+        source: string;
+        rainfall_mm: number;
+        humidity_pct: number;
+        temperature_c: number;
+      }[];
+      source: string;
+      fetched_at: string;
+      basins_checked: number;
+    }>("/weather/live-alerts");
+  }
+
   async createAlert(alertData: { region_id: string; risk_level: string; message: string; channel?: string }) {
     return this.post<unknown>("/alerts", alertData);
   }

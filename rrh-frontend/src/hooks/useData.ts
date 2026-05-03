@@ -127,30 +127,64 @@ export function useAlerts() {
   const [alerts, setAlerts] = useState<AlertItem[]>(_mockAlerts());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [source, setSource] = useState<string>("mock");
 
-  useEffect(() => {
-    apiService
-      .getAlerts()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setAlerts(
-            (data as Record<string, unknown>[]).map((a) => ({
-              id: a.id as string | undefined,
-              level: a.level as AlertItem["level"],
-              title: a.title as string,
-              description: a.description as string,
-              zone: a.zone as string,
-              time: a.time as string,
-              status: a.status as string | undefined,
-            }))
-          );
-        }
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Try live weather alerts first
+      const weatherRes = await apiService.getWeatherAlerts();
+      if (weatherRes.alerts && weatherRes.alerts.length > 0) {
+        setAlerts(
+          weatherRes.alerts.map((a) => ({
+            id: a.id,
+            level: _LVL_MAP[a.level] ?? "low",
+            title: a.title,
+            description: a.description,
+            zone: a.zone,
+            time: a.time,
+            status: a.status,
+          }))
+        );
+        setSource(weatherRes.source || "OpenWeather Live");
+        return;
+      }
+    } catch {
+      // fall through to backend alerts
+    }
 
-  return { alerts, loading, error };
+    try {
+      // Fall back to backend /alerts endpoint
+      const data = await apiService.getAlerts();
+      if (Array.isArray(data) && data.length > 0) {
+        setAlerts(
+          (data as Record<string, unknown>[]).map((a, i) => ({
+            id: String(a.id ?? i),
+            level: _LVL_MAP[String(a.severity ?? a.level ?? "low")] ?? "low",
+            title: a.title as string,
+            description: (a.message ?? a.description ?? "") as string,
+            zone: Array.isArray(a.affected_areas)
+              ? (a.affected_areas as string[])[0]
+              : (a.zone as string) ?? "Rwanda",
+            time: a.created_at
+              ? new Date(a.created_at as string).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : (a.time as string) ?? "",
+            status: (a.status as string) ?? "active",
+          }))
+        );
+        setSource("backend");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load alerts");
+    } finally {
+      setLoading(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { load(); }, [load]);
+
+  return { alerts, loading, error, source, refresh: load };
 }
 
 // ── Analytics ─────────────────────────────────────────────────────────────
@@ -191,6 +225,31 @@ export function useAnalytics(range: "1d" | "7d" | "30d" = "7d") {
   }, [range]);
 
   return { data, loading, error };
+}
+
+// ── ML Basin Predictions ──────────────────────────────────────────────────
+
+export interface BasinPrediction {
+  basin: string;
+  zone: string;
+  risk_level: "low" | "medium" | "high";
+  confidence: number;
+  model_type: string;
+  features: {
+    rainfall_24h: number;
+    water_level: number;
+    humidity: number;
+    soil_saturation: number;
+  };
+}
+
+export function usePredictions() {
+  return useFetch<{
+    predictions: BasinPrediction[];
+    weather_source: string;
+    model_version: string;
+    fetched_at: string;
+  }>(() => apiService.getBasinPredictions());
 }
 
 // ── Local storage ──────────────────────────────────────────────────────────

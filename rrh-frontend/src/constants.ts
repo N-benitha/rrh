@@ -204,7 +204,7 @@ export const FAQS = [
   },
   {
     q: "How do I contact the team?",
-    a: "Contact Benitha or Yvette through the platform contact form or Help Centre.",
+    a: "Contact support through the platform contact form or Help Centre.",
   },
 ];
 
