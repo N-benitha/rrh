@@ -1,4 +1,5 @@
 {
   "json.schemaDownload.enable": false,
-  "typescript.tsdk": "rrh-frontend/node_modules/typescript/lib"
+  "typescript.tsdk": "rrh-frontend/node_modules/typescript/lib",
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }

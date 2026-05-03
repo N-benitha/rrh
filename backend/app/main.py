@@ -25,8 +25,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Flood risk prediction platform for Rwanda",
-    version="0.1.0",
+    description=settings.APP_DESCRIPTION,
+    version=settings.VERSION,
     lifespan=lifespan,
 )
 
