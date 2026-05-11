@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.user import User
+from app.models.user import Users
 from app.schemas.auth import (
     LoginRequest,
     RegisterRequest,
     TokenResponse,
-    UserResponse,
 )
+from app.schemas.user import UserResponse
 from app.services.auth import (
     create_access_token,
     get_current_user,
@@ -21,16 +21,18 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(body: RegisterRequest, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == body.email).first()
+    existing = db.query(Users).filter(Users.email == body.email).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered",
         )
 
-    user = User(
+    user = Users(
+        name=body.name,
         email=body.email,
-        password_hash=hash_password(body.password),
+        phone_number=body.phone_number,
+        password=hash_password(body.password),
     )
     db.add(user)
     db.commit()
@@ -45,8 +47,8 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == body.email).first()
-    if not user or not verify_password(body.password, user.password_hash):
+    user = db.query(Users).filter(Users.email == body.email).first()
+    if not user or not verify_password(body.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -60,5 +62,5 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: Users = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)

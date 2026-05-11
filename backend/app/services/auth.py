@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.models.user import User, UserRole
+from app.models.user import Users, UserRole
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -34,8 +34,8 @@ def create_access_token(user_id: UUID) -> str:
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
-) -> User:
-    """FastAPI dependency — extracts and validates the current user from JWT."""
+) -> Users:
+    """Extracts and validates the current user from JWT."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired token",
@@ -51,13 +51,13 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(Users).filter(Users.id == user_id).first()
     if user is None:
         raise credentials_exception
     return user
 
 
-def require_admin(current_user: User = Depends(get_current_user)) -> User:
+def require_admin(current_user: Users = Depends(get_current_user)) -> Users:
     """FastAPI dependency — ensures the current user has admin role."""
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(

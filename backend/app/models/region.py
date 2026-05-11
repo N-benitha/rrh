@@ -1,4 +1,3 @@
-import enum
 import uuid
 from datetime import datetime, timezone
 
@@ -6,11 +5,7 @@ from sqlalchemy import DateTime, Enum, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-
-class RiskZone(str, enum.Enum):
-    HIGH = "high"
-    MODERATE = "moderate"
-    LOW = "low"
+from app.models.enums import RiskZone
 
 class Region(Base):
     __tablename__ = "regions"

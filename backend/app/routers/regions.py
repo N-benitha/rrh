@@ -8,7 +8,7 @@ from app.database import get_db
 from app.models.prediction import Prediction
 from app.models.region import Region
 from app.models.sensor_reading import SensorReading
-from app.models.user import User
+from app.models.user import Users
 from app.schemas.prediction import PredictionResponse
 from app.schemas.region import RegionDetailResponse, RegionResponse
 from app.schemas.sensor_reading import SensorReadingResponse
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/regions", tags=["regions"])
 @router.get("", response_model=list[RegionResponse])
 def list_regions(
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: Users = Depends(get_current_user),
 ):
     regions = db.query(Region).all()
     result = []
@@ -44,7 +44,7 @@ def list_regions(
 def get_region(
     region_id: UUID,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
+    _current_user: Users = Depends(get_current_user),
 ):
     region = db.query(Region).filter(Region.id == region_id).first()
     if not region:

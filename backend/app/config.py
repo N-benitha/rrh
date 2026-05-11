@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file="../.env",
+        env_file=".env",
         case_sensitive=True,
         extra="ignore",
     )
@@ -16,8 +16,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # Database
-    
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql://postgres:{db_password}@localhost:5432/rrh_db"
 
     # JWT
     JWT_SECRET_KEY: str = "CHANGE-ME-IN-PRODUCTION"

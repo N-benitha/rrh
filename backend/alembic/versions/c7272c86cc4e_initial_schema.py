@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('password', sa.String(length=255), nullable=False),
     sa.Column('role', sa.Enum('ADMIN', 'USER', name='userrole'), nullable=False),
     sa.Column('email_alerts_enabled', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
