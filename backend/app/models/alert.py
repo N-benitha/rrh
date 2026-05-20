@@ -54,7 +54,7 @@ class Alert(Base):
     )
 
     region: Mapped["Region"] = relationship(back_populates="alerts")
-    user: Mapped["User"] = relationship(back_populates="alerts")
+    user: Mapped["Users"] = relationship(back_populates="alerts")
 
     def __repr__(self) -> str:
         return f"<Alert {self.risk_level.value} → {self.user_id}>"

@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # SUPERADMIN_CREDENTIALS
+    SUPERADMIN_EMAIL: str = ""
+    SUPERADMIN_PASSWORD: str = ""
+    SUPERADMIN_NAME: str = "Super Admin"
+    SUPERADMIN_PHONE: str = ""
+
     # External APIs
     OPENWEATHER_API_KEY: Optional [str] = None
     NASA_POWER_BASE_URL: str = "https://power.larc.nasa.gov/api/temporal/daily/point"

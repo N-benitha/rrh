@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.ingestion.scheduler import start_scheduler
-from app.routers import auth, regions, ingestion
+from app.routers import auth, regions, ingestion, users
 
 logger  = logging.getLogger(__name__)
 
@@ -41,6 +41,7 @@ app.add_middleware(
 
 # Routers
 app.include_router(auth.router)
+app.include_router(users.router)
 app.include_router(regions.router)
 app.include_router(ingestion.router)
 

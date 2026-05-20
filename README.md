@@ -48,7 +48,7 @@ The Rwanda Resilience Hub addresses the critical need for proactive flood manage
 - Python 3.9+
 - Node.js 18+
 - PostgreSQL 13+
-- Redis (optional)
+- make (sudo apt install make / brew install make on Mac)
 
 ### Backend Setup
 
@@ -56,30 +56,25 @@ The Rwanda Resilience Hub addresses the critical need for proactive flood manage
    ```bash
    cd backend
    ```
+2. **Run `make setup`**
+	Full setup: install → migrate → seed, then starts dev server
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+3. **`make dev`**
+   Starts server with hot reload
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Other Commands**
 
-4. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+| **Commands**    | **Does** |
+| -------- | ------- |
+| `make install`  |  Create venv if missing, installs requirements   |
+| `make migrate` | Runs `alembic upgrade head`     |
+| `make seed`    | Seeds regions + admin    |
+| `make dev`    | Starts server with hot reload   |
+| `make help`    | Lists all commands with descriptions   |
 
-5. **Run the backend server**
-   ```bash
-   python main.py
-   ```
+***NB:*** Run `make setup` on first clone and `make dev` on subsequent startups
 
-   The API will be available at `http://localhost:8000`
+The API will be available at `http://localhost:8000`
    - API Documentation: `http://localhost:8000/docs`
 
 ### Frontend Setup

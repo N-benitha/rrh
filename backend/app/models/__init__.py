@@ -3,5 +3,6 @@ from app.models.region import Region
 from app.models.sensor_reading import SensorReading
 from app.models.prediction import Prediction
 from app.models.alert import Alert
+from app.models.token_blacklist import TokenBlacklist
 
-__all__ = ["Users", "Region", "SensorReading", "Prediction", "Alert"]
+__all__ = ["Users", "Region", "SensorReading", "Prediction", "Alert", "TokenBlacklist"]
