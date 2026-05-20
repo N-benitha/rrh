@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api/v1";
 
 class APIService {
   private authToken: string | null = localStorage.getItem("authToken");
@@ -53,6 +53,22 @@ class APIService {
     );
   }
 
+  async validateToken() {
+    return this.get<{ email: string; full_name: string }>("/auth/me");
+  }
+
+  async sendVerification(email: string) {
+    return this.post<{ sent: boolean; emailed: boolean }>("/auth/send-verification", { email });
+  }
+
+  async verifyEmail(email: string, code: string) {
+    return this.post<{ verified: boolean }>("/auth/verify-email", { email, code });
+  }
+
+  async resetPassword(email: string, code: string, new_password: string) {
+    return this.post<{ reset: boolean }>("/auth/reset-password", { email, code, new_password });
+  }
+
   setAuthToken(token: string) {
     this.authToken = token;
     localStorage.setItem("authToken", token);
@@ -81,7 +97,7 @@ class APIService {
   // ── Zones ─────────────────────────────────────────────────────────────────
 
   async getZones() {
-    return this.get<unknown[]>("/zones");
+    return this.get<unknown[]>("/flood-risk/zones");
   }
 
   async getZoneDetail(zoneId: string) {
@@ -185,6 +201,25 @@ class APIService {
       current_password: currentPassword,
       new_password: newPassword,
     });
+  }
+
+  // ── Push notifications ─────────────────────────────────────────────────────
+
+  async sendPushAlert(title: string, body: string, level: string) {
+    return this.post<{ sent: number; expo_status?: number; error?: string }>(
+      "/notifications/send-alert",
+      { title, body, level }
+    );
+  }
+
+  async getTokenCount() {
+    return this.get<{ count: number }>("/notifications/token-count");
+  }
+
+  async getNotificationHistory() {
+    return this.get<{ history: { title: string; body: string; level: string; sent_at: string }[] }>(
+      "/notifications/history"
+    );
   }
 }
 

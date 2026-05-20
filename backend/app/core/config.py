@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     # Email
     RESEND_API_KEY: Optional[str] = None
     ALERT_FROM_EMAIL: str = "alerts@yourdomain.com"
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM: str = "noreply@rrh.rw"
 
     # CORS
     FRONTEND_URL: str = "http://localhost:5173"

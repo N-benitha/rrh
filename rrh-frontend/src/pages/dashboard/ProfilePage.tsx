@@ -1,16 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { PageProps } from "../../types";
+import { apiService } from "../../services/api";
 
 export default function ProfilePage({ setPage }: PageProps) {
   const [profile, setProfile] = useState({
-    name: "Yvette Tuyizere",
-    email: "yvette@rrh.org",
+    name: "",
+    email: "",
     role: "Analyst",
-    phone: "+250 798 123 456",
-    location: "Kigali, Rwanda",
-    joinDate: "March 1, 2024",
+    phone: "",
+    location: "Rubavu District, Rwanda",
+    joinDate: "",
     department: "Hydrology & Risk Assessment",
   });
+
+  useEffect(() => {
+    apiService.validateToken().then((user) => {
+      setProfile(p => ({
+        ...p,
+        name:  user.full_name || p.name,
+        email: user.email     || p.email,
+      }));
+    }).catch(() => {});
+  }, []);
 
   const [password, setPassword] = useState({
     current: "",

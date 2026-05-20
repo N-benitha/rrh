@@ -22,12 +22,20 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = ""
     ALERT_FROM_EMAIL: str = "alerts@yourdomain.com"
 
+    # SMTP
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_FROM: str = ""
+    SMTP_PASSWORD: str = ""
+
     # CORS
     FRONTEND_URL: str = "http://localhost:5173"
 
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
+        "extra": "ignore",
     }
 
 

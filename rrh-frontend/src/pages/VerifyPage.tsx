@@ -1,42 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { AuthSide } from "../components/shared";
+import { apiService } from "../services/api";
 import type { PageProps } from "../types";
 
 const CSS = `
   .auth-wrap{min-height:100vh;display:grid;grid-template-columns:45fr 55fr;background:var(--s900)}
   .auth-form-area{display:flex;align-items:center;justify-content:center;padding:36px;background:var(--n50)}
   .auth-box{width:100%;max-width:390px}
-  .auth-title{font-family:var(--serif);font-size:21px;font-weight:700;color:var(--n900);margin-bottom:4px;letter-spacing:-.01em}
-  .auth-sub{font-size:13px;color:var(--n500);margin-bottom:20px;line-height:1.55}
+  .auth-title{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--n900);margin-bottom:4px;letter-spacing:-.01em}
+  .auth-sub{font-size:15px;color:var(--n500);margin-bottom:20px;line-height:1.55}
   
   .verify-box{width:56px;height:56px;border-radius:var(--r6);background:var(--s50);border:1px solid var(--s200);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px}
   .verify-box.ok{background:var(--ok-lt);border-color:var(--ok-bd)}
   
   .step-dots{display:flex;align-items:center;margin-bottom:5px}
-  .sdot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;transition:all .2s}
+  .sdot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;transition:all .2s}
   .sdot.done{background:var(--ok);color:#fff}
   .sdot.active{background:var(--s600);color:#fff;box-shadow:0 0 0 4px rgba(37,58,82,.14)}
   .sdot.idle{background:var(--n100);color:var(--n400);border:1px solid var(--n200)}
   .sline{flex:1;height:1px;background:var(--n200)}
   .sline.done{background:var(--ok)}
-  .slbls{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--n400);letter-spacing:.07em;text-transform:uppercase;margin-bottom:18px}
+  .slbls{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--n400);letter-spacing:.07em;text-transform:uppercase;margin-bottom:18px}
   
   .otp-wrap{display:flex;gap:8px;justify-content:center;margin:18px 0}
   .otp-cell{width:46px;height:52px;border-radius:var(--r4);background:#fff;border:1px solid var(--n200);text-align:center;font-family:var(--serif);font-size:20px;font-weight:700;color:var(--s700);outline:none;transition:all .17s;cursor:text}
   .otp-cell:focus{border-color:var(--s400);box-shadow:0 0 0 3px rgba(58,85,112,.1)}
   .otp-cell.filled{background:var(--s50);border-color:var(--s200);color:var(--s700)}
   
-  .btn-sub{width:100%;padding:11px;border:none;border-radius:var(--r4);background:var(--a300);color:#fff;font-family:var(--serif);font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s;box-shadow:0 2px 8px rgba(249,115,22,.28);cursor:pointer}
+  .btn-sub{width:100%;padding:13px;border:none;border-radius:var(--r4);background:var(--a300);color:#fff;font-family:var(--serif);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s;box-shadow:0 2px 8px rgba(249,115,22,.28);cursor:pointer}
   .btn-sub:hover:not(:disabled){background:var(--a400)}
   .btn-sub:disabled{background:var(--n300);cursor:not-allowed;box-shadow:none}
   
-  .countdown{text-align:center;font-family:var(--mono);font-size:11px;color:var(--n400);margin-top:10px}
+  .countdown{text-align:center;font-family:var(--mono);font-size:13px;color:var(--n400);margin-top:10px}
   .countdown strong{color:var(--s600)}
   
-  .msg{padding:10px 13px;border-radius:var(--r4);font-family:var(--serif);font-size:12.5px;display:flex;align-items:flex-start;gap:8px;margin-bottom:13px;line-height:1.55}
+  .msg{padding:11px 14px;border-radius:var(--r4);font-family:var(--serif);font-size:14px;display:flex;align-items:flex-start;gap:8px;margin-bottom:13px;line-height:1.55}
   .msg-ok{background:var(--ok-lt);border:1px solid var(--ok-bd);color:var(--ok)}
   
-  .tlink{background:none;border:none;font-family:var(--serif);color:var(--s600);font-size:12.5px;font-weight:600;padding:0;transition:color .14s;cursor:pointer}
+  .tlink{background:none;border:none;font-family:var(--serif);color:var(--s600);font-size:14px;font-weight:600;padding:0;transition:color .14s;cursor:pointer}
   .tlink:hover{color:var(--s500)}
 
   @media(max-width:1100px){.auth-wrap{grid-template-columns:1fr}}
@@ -44,10 +45,12 @@ const CSS = `
 `;
 
 export default function VerifyPage({ setPage }: PageProps) {
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const [secs, setSecs] = useState(300);
+  const [code, setCode]       = useState(["", "", "", "", "", ""]);
+  const [secs, setSecs]       = useState(300);
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone]       = useState(false);
+  const [err, setErr]         = useState("");
+  const email = localStorage.getItem("rrh_pending_email") || "";
 
   useEffect(() => {
     const t = setInterval(() => setSecs((s) => Math.max(0, s - 1)), 1000);
@@ -68,13 +71,30 @@ export default function VerifyPage({ setPage }: PageProps) {
     if (e.key === "Backspace" && !code[i] && i > 0) document.getElementById(`otp-${i - 1}`)?.focus();
   };
 
-  const verify = () => {
+  const verify = async () => {
     if (code.join("").length < 6) return;
+    setErr("");
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await apiService.verifyEmail(email, code.join(""));
+      localStorage.removeItem("rrh_pending_email");
       setDone(true);
-    }, 1400);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Invalid code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resend = async () => {
+    setErr("");
+    setSecs(300);
+    setCode(["", "", "", "", "", ""]);
+    try {
+      await apiService.sendVerification(email);
+    } catch {
+      setErr("Could not resend. Please try again.");
+    }
   };
 
   return (
@@ -112,6 +132,14 @@ export default function VerifyPage({ setPage }: PageProps) {
                 <span style={{ color: "var(--s600)" }}>Verify</span>
                 <span>Access</span>
               </div>
+              {email && (
+                <p style={{ textAlign: "center", fontSize: 13, color: "var(--n500)", marginBottom: 8 }}>
+                  Sent to <strong>{email}</strong>
+                </p>
+              )}
+              {err && (
+                <div className="msg msg-err">⚠ {err}</div>
+              )}
               <div className="otp-wrap">
                 {code.map((d, i) => (
                   <input
@@ -138,15 +166,17 @@ export default function VerifyPage({ setPage }: PageProps) {
               </button>
               <div className="countdown">
                 {secs > 0 ? (
-                  <>
-                    Expires in <strong>{fmt(secs)}</strong>
-                  </>
+                  <>Expires in <strong>{fmt(secs)}</strong></>
                 ) : (
                   <>
                     Code expired.{" "}
-                    <button className="tlink" onClick={() => setSecs(300)}>
-                      Resend
-                    </button>
+                    <button className="tlink" onClick={resend}>Resend</button>
+                  </>
+                )}
+                {secs > 0 && (
+                  <>
+                    {" · "}
+                    <button className="tlink" onClick={resend}>Resend code</button>
                   </>
                 )}
               </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiService } from "../services/api";
 import type { Page } from "../types";
 
@@ -19,6 +19,15 @@ const NO_NAV_PAGES: Page[] = ["dashboard", "forgot", "verify"];
 
 export default function RRHApp() {
   const [page, setPage] = useState<Page>(apiService.isAuthenticated() ? "dashboard" : "landing");
+
+  useEffect(() => {
+    if (apiService.isAuthenticated()) {
+      apiService.validateToken().catch(() => {
+        apiService.clearAuth();
+        setPage("login");
+      });
+    }
+  }, []);
 
   const showNav = !NO_NAV_PAGES.includes(page);
 

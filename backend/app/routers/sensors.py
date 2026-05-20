@@ -17,88 +17,64 @@ async def get_all_sensors(
 ):
     """Get all sensor data with optional filtering"""
     try:
-        # Mock sensor data for Rwanda
+        # Sebeya River — 3 virtual IoT sensor stations (Rubavu District, NW Rwanda)
+        # Proposal sensors: SEBY-US-01 (Rutsiro), SEBY-MS-02 (Nyundo), SEBY-DS-03 (Kanama/Rubavu)
+        # Critical thresholds: water_level > 2.5m at DS-03, rainfall > 70mm/h
         sensors = [
             {
-                "id": "NYB_001",
-                "name": "Nyabarongo River - Kigali",
-                "latitude": -1.9536,
-                "longitude": 30.0605,
-                "river_basin": "Nyabarongo",
+                "id": "SEBY-DS-03",
+                "name": "Sebeya Downstream — Kanama/Rubavu",
+                "latitude": -1.6849,
+                "longitude": 29.3892,
+                "river_basin": "Sebeya",
+                "position": "downstream",
                 "status": "online",
-                "battery_level": 87.5,
+                "battery_level": 91.4,
+                "risk_level": "CRITICAL",
                 "last_reading": {
-                    "water_level": 3.2,
-                    "rainfall": 45.0,
-                    "temperature": 22.5,
-                    "humidity": 78.0,
-                    "timestamp": datetime.now() - timedelta(minutes=15)
+                    "water_level": 2.8,
+                    "rainfall": 85.0,
+                    "temperature": 20.2,
+                    "humidity": 92.0,
+                    "timestamp": datetime.now() - timedelta(minutes=2)
                 }
             },
             {
-                "id": "SEB_001", 
-                "name": "Sebeya River - Ruhengeri",
-                "latitude": -1.5097,
-                "longitude": 29.6324,
+                "id": "SEBY-MS-02",
+                "name": "Sebeya Midstream — Nyundo",
+                "latitude": -1.5554,
+                "longitude": 29.5375,
                 "river_basin": "Sebeya",
+                "position": "midstream",
                 "status": "online",
-                "battery_level": 92.1,
+                "battery_level": 87.3,
+                "risk_level": "HIGH",
                 "last_reading": {
-                    "water_level": 3.8,
-                    "rainfall": 67.0,
+                    "water_level": 2.1,
+                    "rainfall": 68.0,
                     "temperature": 20.8,
-                    "humidity": 82.0,
+                    "humidity": 85.0,
+                    "timestamp": datetime.now() - timedelta(minutes=5)
+                }
+            },
+            {
+                "id": "SEBY-US-01",
+                "name": "Sebeya Upstream — Rutsiro",
+                "latitude": -1.3954,
+                "longitude": 29.4849,
+                "river_basin": "Sebeya",
+                "position": "upstream",
+                "status": "online",
+                "battery_level": 94.8,
+                "risk_level": "MODERATE",
+                "last_reading": {
+                    "water_level": 1.4,
+                    "rainfall": 52.0,
+                    "temperature": 21.5,
+                    "humidity": 76.0,
                     "timestamp": datetime.now() - timedelta(minutes=8)
                 }
             },
-            {
-                "id": "AKA_001",
-                "name": "Akanyaru River - Nyanza",
-                "latitude": -2.3514,
-                "longitude": 29.6598,
-                "river_basin": "Akanyaru",
-                "status": "maintenance",
-                "battery_level": 45.3,
-                "last_reading": {
-                    "water_level": 2.1,
-                    "rainfall": 23.0,
-                    "temperature": 23.1,
-                    "humidity": 75.0,
-                    "timestamp": datetime.now() - timedelta(hours=2)
-                }
-            },
-            {
-                "id": "MWG_001",
-                "name": "Mwogo River - Gitarama",
-                "latitude": -2.0786,
-                "longitude": 29.8325,
-                "river_basin": "Mwogo",
-                "status": "online",
-                "battery_level": 78.9,
-                "last_reading": {
-                    "water_level": 2.8,
-                    "rainfall": 52.0,
-                    "temperature": 21.9,
-                    "humidity": 80.0,
-                    "timestamp": datetime.now() - timedelta(minutes=22)
-                }
-            },
-            {
-                "id": "KAG_001",
-                "name": "Kagera River - Rusumo",
-                "latitude": -2.3844,
-                "longitude": 30.4831,
-                "river_basin": "Kagera",
-                "status": "online",
-                "battery_level": 95.2,
-                "last_reading": {
-                    "water_level": 2.5,
-                    "rainfall": 38.0,
-                    "temperature": 24.2,
-                    "humidity": 73.0,
-                    "timestamp": datetime.now() - timedelta(minutes=5)
-                }
-            }
         ]
         
         # Apply filters

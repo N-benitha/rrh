@@ -12,8 +12,8 @@ export default function SettingsPage() {
   });
 
   const [thresholds, setThresholds] = useState({
-    rainfall: 100,
-    riverLevel: 4,
+    rainfall: 70,
+    riverLevel: 2.5,
     riskScore: 80,
   });
 
@@ -136,39 +136,39 @@ export default function SettingsPage() {
 
         <div className="set-form-row">
           <div className="set-form-group">
-            <label>Rainfall Alert (mm/day)</label>
+            <label>Rainfall Alert (mm/h) — Critical threshold: 70 mm/h</label>
             <div className="set-input-group">
               <input
                 type="range"
-                min="50"
-                max="200"
-                step="10"
+                min="30"
+                max="120"
+                step="5"
                 value={thresholds.rainfall}
                 onChange={(e) =>
                   setThresholds({ ...thresholds, rainfall: parseInt(e.target.value) })
                 }
               />
-              <span className="set-input-value">{thresholds.rainfall}mm</span>
+              <span className="set-input-value">{thresholds.rainfall} mm/h</span>
             </div>
-            <div className="set-input-hint">Alert when rainfall exceeds this value</div>
+            <div className="set-input-hint">Alert when hourly rainfall exceeds this value at Sebeya sensors</div>
           </div>
 
           <div className="set-form-group">
-            <label>River Level Alert (m)</label>
+            <label>River Level Alert (m) — Critical threshold: 2.5 m</label>
             <div className="set-input-group">
               <input
                 type="range"
-                min="2"
-                max="6"
-                step="0.5"
+                min="1"
+                max="4"
+                step="0.1"
                 value={thresholds.riverLevel}
                 onChange={(e) =>
                   setThresholds({ ...thresholds, riverLevel: parseFloat(e.target.value) })
                 }
               />
-              <span className="set-input-value">{thresholds.riverLevel}m</span>
+              <span className="set-input-value">{thresholds.riverLevel.toFixed(1)} m</span>
             </div>
-            <div className="set-input-hint">Alert when water level exceeds this height</div>
+            <div className="set-input-hint">Alert when Sebeya River level exceeds this height at SEBY-DS-03</div>
           </div>
 
           <div className="set-form-group">
@@ -236,11 +236,11 @@ export default function SettingsPage() {
           </div>
           <div className="set-info-row">
             <span>Last Login:</span>
-            <strong>Apr 16, 2026 at 2:45 PM</strong>
+            <strong>{new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })} at {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</strong>
           </div>
           <div className="set-info-row">
-            <span>Account Created:</span>
-            <strong>March 1, 2024</strong>
+            <span>System:</span>
+            <strong>Sebeya River Basin · Rubavu District</strong>
           </div>
         </div>
 

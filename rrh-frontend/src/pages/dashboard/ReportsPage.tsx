@@ -1,19 +1,41 @@
 import { useState, useEffect } from "react";
+import { apiService } from "../../services/api";
 
 type ReportType = "daily" | "weekly" | "monthly";
 type Report = { id: number; name: string; type: ReportType; date: string; zones: number; size: string };
 
+const SEBEYA_SENSORS = [
+  "SEBY-DS-03 — Kanama/Rubavu (Downstream)",
+  "SEBY-MS-02 — Nyundo (Midstream)",
+  "SEBY-US-01 — Rutsiro (Upstream)",
+];
+
 const PREVIEWS: Record<ReportType, { zones: string[]; alerts: number; pages: number }> = {
-  weekly:  { zones: ["Nyabugogo Wetland", "Sebeya River Basin", "Nyabarongo River", "Kigali Urban Zone", "Akagera Wetlands"], alerts: 3,  pages: 12 },
-  daily:   { zones: ["Nyabugogo Wetland", "Sebeya River Basin", "Nyabarongo River", "Kigali Urban Zone", "Akagera Wetlands"], alerts: 1,  pages: 4  },
-  monthly: { zones: ["Nyabugogo Wetland", "Sebeya River Basin", "Nyabarongo River", "Kigali Urban Zone", "Akagera Wetlands"], alerts: 8,  pages: 32 },
+  weekly:  { zones: SEBEYA_SENSORS, alerts: 3, pages: 12 },
+  daily:   { zones: SEBEYA_SENSORS, alerts: 1, pages: 4  },
+  monthly: { zones: SEBEYA_SENSORS, alerts: 8, pages: 32 },
 };
 
 const INITIAL_REPORTS: Report[] = [
-  { id: 1, name: "Weekly Summary - Apr 8-15",    type: "weekly",  date: "Apr 15, 2026", zones: 5, size: "2.4 MB" },
-  { id: 2, name: "Daily Report - Apr 15",         type: "daily",   date: "Apr 15, 2026", zones: 5, size: "456 KB" },
-  { id: 3, name: "Monthly Summary - March 2026",  type: "monthly", date: "Mar 31, 2026", zones: 5, size: "8.7 MB" },
+  { id: 1, name: "Weekly Summary — Sebeya Basin Apr 8–15",  type: "weekly",  date: "Apr 15, 2026", zones: 3, size: "2.4 MB" },
+  { id: 2, name: "Daily Report — Sebeya Basin Apr 15",      type: "daily",   date: "Apr 15, 2026", zones: 3, size: "456 KB" },
+  { id: 3, name: "Monthly Summary — Sebeya Basin Mar 2026", type: "monthly", date: "Mar 31, 2026", zones: 3, size: "8.7 MB" },
 ];
+
+type SentAlert = { title: string; body: string; level: string; sent_at: string };
+
+const LEVEL_COLOR: Record<string, string> = {
+  critical: "#DC2626", high: "#F97316", moderate: "#EAB308", low: "#059669",
+};
+const LEVEL_LABEL: Record<string, string> = {
+  critical: "Critical", high: "High", moderate: "Moderate", low: "Low",
+};
+
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+    + " · " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + " UTC";
+}
 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState<ReportType>("weekly");
@@ -21,6 +43,19 @@ export default function ReportsPage() {
   const [viewedId, setViewedId] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [schedule, setSchedule] = useState({ daily: true, weekly: true, monthly: true });
+  const [sentAlerts, setSentAlerts] = useState<SentAlert[]>([]);
+
+  useEffect(() => {
+    apiService.getNotificationHistory()
+      .then(res => setSentAlerts(res.history))
+      .catch(() => {});
+    const id = setInterval(() => {
+      apiService.getNotificationHistory()
+        .then(res => setSentAlerts(res.history))
+        .catch(() => {});
+    }, 15_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (menuOpenId === null) return;
@@ -51,8 +86,15 @@ export default function ReportsPage() {
   };
 
   const handleGenerateReport = () => {
-    const content = `${reportType.toUpperCase()} REPORT\nGenerated: ${new Date().toLocaleString()}\nZones: ${PREVIEWS[reportType].zones.join(", ")}`;
-    triggerDownload(`RRH_${reportType}_report_${Date.now()}`, "txt", content);
+    const content = [
+      `RWANDA RESILIENCE HUB — SEBEYA RIVER BASIN ${reportType.toUpperCase()} REPORT`,
+      `Generated: ${new Date().toLocaleString()}`,
+      `Basin: Sebeya River, Rubavu District, Northwest Rwanda`,
+      `IoT Sensor Stations: ${SEBEYA_SENSORS.join(" | ")}`,
+      `Critical Thresholds: Water level > 2.5 m (downstream) · Rainfall > 70 mm/h`,
+      `ML Model: Random Forest · 91.4% accuracy · NASA POWER 2010–2023`,
+    ].join("\n");
+    triggerDownload(`RRH_Sebeya_${reportType}_report_${Date.now()}`, "txt", content);
   };
 
   const deleteReport = (id: number) => {
@@ -74,14 +116,14 @@ export default function ReportsPage() {
           <div className="rep-stat-lbl">💾 Total Storage</div>
         </div>
         <div className="rep-stat-item">
-          <div className="rep-stat-val">5</div>
-          <div className="rep-stat-lbl">📍 Monitored Zones</div>
+          <div className="rep-stat-val">3</div>
+          <div className="rep-stat-lbl">📍 IoT Sensor Stations</div>
         </div>
       </div>
 
       {/* Generate New Report */}
       <div className="rep-panel">
-        <h2 className="rep-panel-title">✨ Generate New Report</h2>
+        <h2 className="rep-panel-title">✨ Generate Sebeya Basin Report</h2>
         <div className="rep-form">
           <div className="rep-form-row">
             <div className="rep-form-group">
@@ -106,16 +148,14 @@ export default function ReportsPage() {
           </div>
 
           <div className="rep-form-group">
-            <label>Include Zones</label>
+            <label>Include Sensor Stations</label>
             <div className="rep-zones-list">
-              {["Nyabugogo Wetland", "Sebeya River Basin", "Nyabarongo River", "Kigali Urban Zone", "Akagera Wetlands"].map(
-                (zone, i) => (
-                  <label key={i} className="rep-zone-checkbox">
-                    <input type="checkbox" defaultChecked={i < 3} />
-                    {zone}
-                  </label>
-                ),
-              )}
+              {SEBEYA_SENSORS.map((sensor, i) => (
+                <label key={i} className="rep-zone-checkbox">
+                  <input type="checkbox" defaultChecked />
+                  {sensor}
+                </label>
+              ))}
             </div>
           </div>
 
@@ -222,15 +262,54 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {/* Sent Alert Notifications Log */}
+      <div className="rep-panel">
+        <h2 className="rep-panel-title">📢 Sent Alert Notifications</h2>
+        {sentAlerts.length === 0 ? (
+          <div style={{ padding: "16px", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>
+            No alerts sent yet. Use the Alerts page to send notifications to the mobile app.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {sentAlerts.map((a, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: 14,
+                padding: "12px 16px", borderRadius: 8,
+                border: "1px solid #e5e7eb", background: "#fff",
+                borderLeft: `4px solid ${LEVEL_COLOR[a.level.toLowerCase()] ?? "#6b7280"}`,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                      background: LEVEL_COLOR[a.level.toLowerCase()] ?? "#6b7280",
+                      color: "#fff",
+                    }}>
+                      {LEVEL_LABEL[a.level.toLowerCase()] ?? a.level.toUpperCase()}
+                    </span>
+                    <span style={{ fontSize: 12, color: "#9ca3af" }}>{fmtDate(a.sent_at)}</span>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 2 }}>{a.title}</div>
+                  <div style={{ fontSize: 13, color: "#6b7280" }}>{a.body}</div>
+                </div>
+                <span style={{ fontSize: 11, color: "#10b981", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  📱 Sent
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Scheduled Reports */}
       <div className="rep-panel">
         <h2 className="rep-panel-title">⏰ Scheduled Reports</h2>
         <div className="rep-scheduled">
           {(["daily", "weekly", "monthly"] as const).map((key) => {
             const info = {
-              daily:   { label: "Daily Report",     sub: "Every day at 6:00 AM UTC • Sent to admin@rrh.org" },
-              weekly:  { label: "Weekly Summary",   sub: "Every Monday at 8:00 AM UTC • Sent to 5 recipients" },
-              monthly: { label: "Monthly Analysis", sub: "1st of every month at 10:00 AM UTC • Sent to 8 recipients" },
+              daily:   { label: "Daily Report",     sub: "Every day at 6:00 AM UTC • Sent to admin@rrh.rw" },
+              weekly:  { label: "Weekly Summary",   sub: "Every Monday at 8:00 AM UTC • Sent to 3 recipients" },
+              monthly: { label: "Monthly Analysis", sub: "1st of every month at 10:00 AM UTC • Sent to 5 recipients" },
             }[key];
             return (
               <div key={key} className="rep-scheduled-item">

@@ -17,7 +17,19 @@ interface LeafletStatic {
   circle: (latlng: [number, number], opts: object) => LeafletLayer;
   divIcon: (opts: object) => LeafletLayer;
   marker: (latlng: [number, number], opts: object) => LeafletLayer;
+  polyline: (latlngs: [number, number][], opts: object) => LeafletLayer;
 }
+
+// Approximate Sebeya River path: Rutsiro (upstream) → Nyundo → Kanama → Lake Kivu
+const SEBEYA_RIVER: [number, number][] = [
+  [-1.3954, 29.4849],
+  [-1.4400, 29.4600],
+  [-1.4900, 29.4400],
+  [-1.5554, 29.5375],
+  [-1.6000, 29.4800],
+  [-1.6400, 29.4200],
+  [-1.6849, 29.3892],
+];
 type WindowWithLeaflet = Window & typeof globalThis & { L?: LeafletStatic };
 
 const TREND_ICON: Record<string, string> = { up: "▲", dn: "▼", st: "●" };
@@ -160,7 +172,7 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
             background:rgba(6,15,26,.85);color:${r.color};border:1px solid ${r.color}44;
             border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;white-space:nowrap;
             letter-spacing:.04em;font-family:monospace">
-            ${z.name.split(" ")[0].toUpperCase()}
+            ${z.name.split("—")[1]?.trim().split("/")[0]?.trim().toUpperCase() ?? z.name}
           </div>
         </div>`;
 
@@ -202,8 +214,8 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
       if (!L || !ref.current) return;
 
       const map = L.map(ref.current, {
-        center: [-1.95, 30.05],
-        zoom: 8,
+        center: [-1.54, 29.44],
+        zoom: 11,
         zoomControl: false,
         attributionControl: false,
       });
@@ -214,6 +226,18 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
       }).addTo(map);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
+
+      // Draw Sebeya River
+      L.polyline(SEBEYA_RIVER, { color: "#60a5fa", weight: 4, opacity: 0.9 }).addTo(map);
+      // River label marker
+      const riverIcon = L.divIcon({
+        className: "",
+        html: `<div style="background:rgba(6,15,26,.82);color:#60a5fa;border:1px solid #3b82f6;
+          border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;white-space:nowrap;
+          letter-spacing:.05em;font-family:monospace">SEBEYA RIVER</div>`,
+        iconSize: [0, 0], iconAnchor: [0, 0],
+      });
+      L.marker([-1.53, 29.42], { icon: riverIcon }).addTo(map);
 
       mapRef.current = map;
       renderMarkers(L, map, displayZones);
@@ -244,7 +268,7 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
 
   const riverPct = (river: string) => {
     const m = parseFloat(river);
-    return Math.min(100, (m / 6) * 100);
+    return Math.min(100, (m / 3.5) * 100);
   };
 
   const riverColor = (level: string) =>
@@ -282,6 +306,10 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
 
       {/* legend */}
       <div className="dm-legend">
+        <div className="dm-legend-row">
+          <div style={{ width: 16, height: 3, background: "#3b82f6", borderRadius: 2, flexShrink: 0 }} />
+          <span className="dm-legend-lbl">Sebeya River</span>
+        </div>
         {(["CRITICAL", "HIGH", "MODERATE", "LOW"] as const).map((lvl) => (
           <div key={lvl} className="dm-legend-row">
             <div className="dm-legend-dot" style={{ background: RISK_META[lvl].color }} />
@@ -356,7 +384,7 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
                 </span>
               </div>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,.35)" }}>
-                {sel.trend === "up" ? "▲ Rising" : sel.trend === "dn" ? "▼ Falling" : "● Stable"} · threshold 5.5m
+                {sel.trend === "up" ? "▲ Rising" : sel.trend === "dn" ? "▼ Falling" : "● Stable"} · critical threshold 2.5m
               </div>
             </div>
 

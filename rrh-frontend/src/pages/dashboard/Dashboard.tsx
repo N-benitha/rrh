@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { apiService } from "../../services/api";
+import { useIdleTimeout } from "../../hooks/useIdleTimeout";
 import type { PageProps } from "../../types";
 import DashSidebar from "../../components/dashboard/DashSidebar";
 import DashTopBar from "../../components/dashboard/DashTopBar";
@@ -23,6 +25,13 @@ import LiveTickerBanner from "../../components/dashboard/LiveTickerBanner";
 
 export default function Dashboard({ setPage }: PageProps) {
   const [activeNav, setActiveNav] = useState("overview");
+
+  const handleLogout = () => {
+    apiService.clearAuth();
+    setPage("landing");
+  };
+
+  const { showWarning, resetTimer } = useIdleTimeout(handleLogout);
 
   const pageTitles: { [key: string]: string } = {
     overview: "Dashboard Overview",
@@ -49,6 +58,23 @@ export default function Dashboard({ setPage }: PageProps) {
   return (
     <>
       <LiveTickerBanner />
+      {showWarning && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "#7c2d12", color: "#fff", padding: "12px 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          fontFamily: "var(--serif)", fontSize: 14, boxShadow: "0 2px 12px rgba(0,0,0,.4)",
+        }}>
+          <span>⚠ You have been inactive for nearly 2 hours. You will be logged out in 5 minutes.</span>
+          <button onClick={resetTimer} style={{
+            background: "#fff", color: "#7c2d12", border: "none", borderRadius: 6,
+            padding: "6px 16px", fontFamily: "var(--serif)", fontWeight: 700,
+            fontSize: 13, cursor: "pointer", flexShrink: 0, marginLeft: 16,
+          }}>
+            Stay logged in
+          </button>
+        </div>
+      )}
       <div className="db-container">
         <DashSidebar active={activeNav} setActive={setActiveNav} setPage={setPage} />
         <div className="db-main">

@@ -140,7 +140,7 @@ export default function DashboardOverview() {
 
             {selectedZone && (() => {
               const chip = CHIP[selectedZone.level] ?? CHIP.LOW;
-              const pct  = Math.min(100, (parseFloat(selectedZone.river) / 6) * 100);
+              const pct  = Math.min(100, (parseFloat(selectedZone.river) / 3.5) * 100);
               const rCol = LEVEL_COLORS[selectedZone.level] ?? "#22c55e";
               return (
                 <div className="zd-mini-card">
@@ -185,7 +185,7 @@ export default function DashboardOverview() {
                       <span className="zd-mini-bar-pct" style={{ color: rCol }}>{Math.round(pct)}%</span>
                     </div>
                     <div style={{ fontSize: 9, color: "rgba(255,255,255,.3)" }}>
-                      {selectedZone.trend === "up" ? "▲ Rising" : selectedZone.trend === "dn" ? "▼ Falling" : "● Stable"} · threshold 5.5m
+                      {selectedZone.trend === "up" ? "▲ Rising" : selectedZone.trend === "dn" ? "▼ Falling" : "● Stable"} · critical threshold 2.5m
                     </div>
                   </div>
 
@@ -211,8 +211,8 @@ export default function DashboardOverview() {
       <div className="db-row-2">
         <div className="db-panel">
           <div className="db-panel-header">
-            <h3 className="db-panel-title">🌧️ Weekly Rainfall Trend</h3>
-            <p className="db-panel-subtitle">7-day rainfall distribution by zone</p>
+            <h3 className="db-panel-title">🌧️ Weekly Rainfall — Sebeya Basin</h3>
+            <p className="db-panel-subtitle">7-day totals · critical threshold 70mm/h</p>
           </div>
           <div className="db-panel-body">
             <BarChart data={rainfallData} />
@@ -221,8 +221,8 @@ export default function DashboardOverview() {
 
         <div className="db-panel">
           <div className="db-panel-header">
-            <h3 className="db-panel-title">💧 River Level Forecast</h3>
-            <p className="db-panel-subtitle">Nyabarongo River — Last 24h trend</p>
+            <h3 className="db-panel-title">💧 River Level — Sebeya (Downstream)</h3>
+            <p className="db-panel-subtitle">SEBY-DS-03 Kanama/Rubavu · critical threshold 2.5m</p>
           </div>
           <div className="db-panel-body">
             <LineChart data={riverData} color="#3B82F6" unit="m" />
@@ -250,7 +250,7 @@ export default function DashboardOverview() {
         </div>
         <div className="db-panel-body">
           {predLoading ? (
-            <div style={{ color: "rgba(255,255,255,.4)", fontFamily: "var(--mono)", fontSize: 12, padding: "20px 0" }}>
+            <div style={{ color: "rgba(255,255,255,.4)", fontFamily: "var(--mono)", fontSize: 14, padding: "20px 0" }}>
               Running predictions…
             </div>
           ) : predictions?.predictions?.length ? (
@@ -268,21 +268,21 @@ export default function DashboardOverview() {
                     padding: "14px 16px",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                      <div style={{ fontFamily: "var(--serif)", fontSize: 13, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
+                      <div style={{ fontFamily: "var(--serif)", fontSize: 14, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
                         {p.basin}
                       </div>
-                      <span style={{ fontSize: 10, fontFamily: "var(--mono)", padding: "2px 7px",
+                      <span style={{ fontSize: 12, fontFamily: "var(--mono)", padding: "2px 7px",
                         borderRadius: 4, background: riskBg, color: riskColor, flexShrink: 0, marginLeft: 8 }}>
                         {p.risk_level.toUpperCase()}
                       </span>
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", marginBottom: 10 }}>{p.zone}</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,.45)", marginBottom: 10 }}>{p.zone}</div>
 
                     {/* Confidence bar */}
                     <div style={{ marginBottom: 10 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "rgba(255,255,255,.35)" }}>Confidence</span>
-                        <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: riskColor, fontWeight: 600 }}>{p.confidence}%</span>
+                        <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "rgba(255,255,255,.35)" }}>Confidence</span>
+                        <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: riskColor, fontWeight: 600 }}>{p.confidence}%</span>
                       </div>
                       <div style={{ height: 4, background: "rgba(255,255,255,.08)", borderRadius: 2 }}>
                         <div style={{ height: "100%", width: `${p.confidence}%`, background: riskColor, borderRadius: 2 }} />
@@ -297,7 +297,7 @@ export default function DashboardOverview() {
                         ["💧", `${p.features.humidity}%`, "Humidity"],
                         ["🌱", `${p.features.soil_saturation}%`, "Soil"],
                       ].map(([icon, val, lbl]) => (
-                        <div key={lbl} style={{ fontSize: 10, color: "rgba(255,255,255,.4)" }}>
+                        <div key={lbl} style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>
                           {icon} <span style={{ color: "rgba(255,255,255,.7)" }}>{val}</span> {lbl}
                         </div>
                       ))}
@@ -307,7 +307,7 @@ export default function DashboardOverview() {
               })}
             </div>
           ) : (
-            <div style={{ color: "rgba(255,255,255,.35)", fontSize: 13 }}>
+            <div style={{ color: "rgba(255,255,255,.35)", fontSize: 14 }}>
               Backend offline — start the server to see live predictions.
             </div>
           )}
@@ -316,8 +316,8 @@ export default function DashboardOverview() {
 
       <div className="db-panel">
         <div className="db-panel-header">
-          <h3 className="db-panel-title">📍 Monitored Risk Zones</h3>
-          <p className="db-panel-subtitle">Real-time data from {zones.length} zones across Rwanda · click a row for details</p>
+          <h3 className="db-panel-title">📍 Sebeya River — IoT Sensor Stations</h3>
+          <p className="db-panel-subtitle">{zones.length} virtual sensors · SEBY-US-01 · SEBY-MS-02 · SEBY-DS-03 · click a row for details</p>
         </div>
         <div className="db-panel-body">
           <table className="db-zone-table">
@@ -408,7 +408,7 @@ export default function DashboardOverview() {
                                 <span className="zd-mini-bar-pct" style={{ color: rCol }}>{Math.round(pct)}%</span>
                               </div>
                               <div style={{ fontSize: 9, color: "rgba(255,255,255,.3)" }}>
-                                {zone.trend === "up" ? "▲ Rising" : zone.trend === "dn" ? "▼ Falling" : "● Stable"} · threshold 5.5m
+                                {zone.trend === "up" ? "▲ Rising" : zone.trend === "dn" ? "▼ Falling" : "● Stable"} · critical threshold 2.5m
                               </div>
                             </div>
                             <div className="zd-mini-score-wrap">
