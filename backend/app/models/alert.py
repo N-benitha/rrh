@@ -6,7 +6,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.models.prediction import RiskLevel
+from app.models.enums import RiskLevel
 
 
 class AlertChannel(str, enum.Enum):

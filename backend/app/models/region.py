@@ -5,7 +5,7 @@ from sqlalchemy import DateTime, Enum, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.models.enums import RiskZone
+from app.models.enums import RiskLevel
 
 class Region(Base):
     __tablename__ = "regions"
@@ -17,8 +17,8 @@ class Region(Base):
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=False)
-    risk_zone: Mapped[RiskZone] = mapped_column(
-        Enum(RiskZone), default=RiskZone.MODERATE, nullable=False
+    risk_level: Mapped[RiskLevel] = mapped_column(
+        Enum(RiskLevel), default=RiskLevel.MODERATE, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

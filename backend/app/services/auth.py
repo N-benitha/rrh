@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -15,7 +15,7 @@ from app.repositories import token_blacklist_repository, user_repository
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, TokenUserInfo
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+auth_scheme = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -84,7 +84,7 @@ def logout(db: Session, token: str) -> None:
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: HTTPAuthorizationCredentials = Depends(auth_scheme),
     db: Session = Depends(get_db),
 ) -> Users:
     credentials_exception = HTTPException(
@@ -92,9 +92,12 @@ def get_current_user(
         detail="Invalid or expired token",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if token is None:
+        raise credentials_exception
+    raw_token = token.credentials
     try:
         payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+            raw_token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )
         user_id: str | None = payload.get("sub")
         if user_id is None:
@@ -102,7 +105,7 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    if token_blacklist_repository.is_blacklisted(db, token):
+    if token_blacklist_repository.is_blacklisted(db, raw_token):
         raise credentials_exception
 
     user = user_repository.get_by_id(db, user_id)

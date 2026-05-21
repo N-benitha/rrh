@@ -1,4 +1,3 @@
-import enum
 import uuid
 from datetime import datetime, timezone
 
@@ -7,13 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-
-
-class RiskLevel(str, enum.Enum):
-    LOW = "low"
-    MODERATE = "moderate"
-    HIGH = "high"
-    CRITICAL = "critical"
+from app.models.enums import RiskLevel
 
 
 class Prediction(Base):

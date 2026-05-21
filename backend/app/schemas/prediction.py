@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.models.prediction import RiskLevel
+from app.models.enums import RiskLevel
 
 
 class PredictionResponse(BaseModel):

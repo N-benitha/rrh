@@ -16,7 +16,8 @@ class UserRole(BaseEnum):
     ADMIN = "admin"
     USER = "user"
 
-class RiskZone(BaseEnum):
-    HIGH = "high"
-    MODERATE = "moderate"
+class RiskLevel(BaseEnum):
     LOW = "low"
+    MODERATE = "moderate"
+    HIGH = "high"
+    CRITICAL = "critical"

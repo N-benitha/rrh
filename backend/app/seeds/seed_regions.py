@@ -5,14 +5,15 @@ Run once after migrations:
 """
 
 from app.database import SessionLocal
-from app.models.region import Region, RiskZone
+from app.models.enums import RiskLevel
+from app.models.region import Region
 
 REGIONS = [
     {
         "name": "Nyabugogo Catchment (Kigali)",
         "latitude": -1.9403,
         "longitude": 29.8739,
-        "risk_zone": RiskZone.HIGH,
+        "risk_level": RiskLevel.HIGH,
         "description": (
             "Urban flood-prone zone in Kigali City. The Nyabugogo river "
             "confluence area experiences frequent flooding due to rapid "
@@ -23,7 +24,7 @@ REGIONS = [
         "name": "Sebeya River Basin (Rubavu)",
         "latitude": -1.7469,
         "longitude": 29.2589,
-        "risk_zone": RiskZone.HIGH,
+        "risk_level": RiskLevel.HIGH,
         "description": (
             "Western Province catchment prone to flash floods. The Sebeya "
             "River has repeatedly burst its banks, displacing residents in "
@@ -34,7 +35,7 @@ REGIONS = [
         "name": "Nyabarongo Basin (Muhanga)",
         "latitude": -2.0844,
         "longitude": 29.7519,
-        "risk_zone": RiskZone.MODERATE,
+        "risk_level": RiskLevel.MODERATE,
         "description": (
             "Central Rwanda river basin. The Nyabarongo is Rwanda's longest "
             "river and its floodplain affects agricultural communities in "
@@ -45,7 +46,7 @@ REGIONS = [
         "name": "Rusizi Floodplain (Rusizi)",
         "latitude": -2.4839,
         "longitude": 28.9078,
-        "risk_zone": RiskZone.HIGH,
+        "risk_level": RiskLevel.HIGH,
         "description": (
             "Southwestern border region along the Rusizi River and Lake Kivu "
             "outflow. Low-lying terrain makes this area vulnerable to both "
@@ -56,7 +57,7 @@ REGIONS = [
         "name": "Nyagatare (Control Zone)",
         "latitude": -1.3079,
         "longitude": 30.3256,
-        "risk_zone": RiskZone.LOW,
+        "risk_level": RiskLevel.LOW,
         "description": (
             "Eastern Province reference zone with lower flood risk. Drier "
             "climate and flatter terrain compared to western and central "
