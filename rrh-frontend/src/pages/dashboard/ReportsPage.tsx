@@ -67,34 +67,112 @@ export default function ReportsPage() {
     return () => document.removeEventListener("mousedown", handle);
   }, [menuOpenId]);
 
-  const triggerDownload = (name: string, ext: string, content: string) => {
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${name.replace(/ /g, "_")}.${ext}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const buildReportHTML = (title: string, type: string, alerts: SentAlert[]) => {
+    const now = new Date().toLocaleString("en-GB");
+    const alertRows = alerts.length
+      ? alerts.map(a => `
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${fmtDate(a.sent_at)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">
+              <span style="background:${LEVEL_COLOR[a.level.toLowerCase()] ?? '#6b7280'};color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700">
+                ${(LEVEL_LABEL[a.level.toLowerCase()] ?? a.level).toUpperCase()}
+              </span>
+            </td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${a.title}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">${a.body}</td>
+          </tr>`).join("")
+      : `<tr><td colspan="4" style="padding:16px;text-align:center;color:#9ca3af">No alerts recorded in this period.</td></tr>`;
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${title}</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:0;color:#111827}
+    .header{background:#1e3a5f;color:#fff;padding:32px 40px}
+    .header h1{margin:0 0 4px;font-size:22px}
+    .header p{margin:0;font-size:13px;opacity:.75}
+    .section{padding:28px 40px;border-bottom:1px solid #e5e7eb}
+    .section h2{font-size:15px;font-weight:700;color:#1e3a5f;margin:0 0 16px}
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .meta-item{background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px 16px}
+    .meta-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+    .meta-value{font-size:14px;font-weight:600;color:#111827}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f3f4f6;padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;border-bottom:2px solid #e5e7eb}
+    .footer{padding:24px 40px;text-align:center;font-size:12px;color:#9ca3af;background:#f9fafb}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Rwanda Resilience Hub — Sebeya Basin ${type.charAt(0).toUpperCase() + type.slice(1)} Report</h1>
+    <p>Generated: ${now} &nbsp;|&nbsp; Rubavu District, Western Province, Rwanda</p>
+  </div>
+
+  <div class="section">
+    <h2>Report Summary</h2>
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-label">Report Type</div><div class="meta-value">${type.charAt(0).toUpperCase() + type.slice(1)} Summary</div></div>
+      <div class="meta-item"><div class="meta-label">Generated</div><div class="meta-value">${now}</div></div>
+      <div class="meta-item"><div class="meta-label">Basin</div><div class="meta-value">Sebeya River Basin · Rubavu District</div></div>
+      <div class="meta-item"><div class="meta-label">ML Model</div><div class="meta-value">Random Forest · 91.4% accuracy</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Monitored Sensor Stations</h2>
+    <table>
+      <thead><tr><th>Station ID</th><th>Location</th><th>Position</th><th>Critical Threshold</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">SEBY-DS-03</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">Kanama / Rubavu</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">Downstream</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">Water level &gt; 2.5 m</td></tr>
+        <tr><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">SEBY-MS-02</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">Nyundo</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">Midstream</td><td style="padding:8px 12px;border-bottom:1px solid #e5e7eb">Rainfall &gt; 70 mm/h</td></tr>
+        <tr><td style="padding:8px 12px">SEBY-US-01</td><td style="padding:8px 12px">Rutsiro</td><td style="padding:8px 12px">Upstream</td><td style="padding:8px 12px">Early-warning station</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Alert Notifications Log (${alerts.length} total)</h2>
+    <table>
+      <thead><tr><th>Date / Time</th><th>Level</th><th>Title</th><th>Message</th></tr></thead>
+      <tbody>${alertRows}</tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Rwanda Resilience Hub &nbsp;·&nbsp; University of Rwanda Capstone Project &nbsp;·&nbsp; ${new Date().getFullYear()}
+    <br/>This report was generated automatically. For emergencies contact MINEMA or Rubavu District authorities.
+  </div>
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>`;
   };
 
   const handleDownload = (report: Report, format = "pdf") => {
-    const ext = format === "xlsx" ? "xlsx" : format === "json" ? "json" : "pdf";
-    triggerDownload(report.name, ext, `Report: ${report.name}\nGenerated: ${new Date().toLocaleString()}`);
+    if (format === "json") {
+      const data = { report: report.name, generated: new Date().toISOString(), sensors: SEBEYA_SENSORS, alerts: sentAlerts };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${report.name.replace(/ /g, "_")}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    } else {
+      const html = buildReportHTML(report.name, report.type, sentAlerts);
+      const win = window.open("", "_blank");
+      if (win) { win.document.write(html); win.document.close(); }
+    }
     setMenuOpenId(null);
   };
 
   const handleGenerateReport = () => {
-    const content = [
-      `RWANDA RESILIENCE HUB — SEBEYA RIVER BASIN ${reportType.toUpperCase()} REPORT`,
-      `Generated: ${new Date().toLocaleString()}`,
-      `Basin: Sebeya River, Rubavu District, Northwest Rwanda`,
-      `IoT Sensor Stations: ${SEBEYA_SENSORS.join(" | ")}`,
-      `Critical Thresholds: Water level > 2.5 m (downstream) · Rainfall > 70 mm/h`,
-      `ML Model: Random Forest · 91.4% accuracy · NASA POWER 2010–2023`,
-    ].join("\n");
-    triggerDownload(`RRH_Sebeya_${reportType}_report_${Date.now()}`, "txt", content);
+    const html = buildReportHTML(
+      `RRH Sebeya ${reportType} Report — ${new Date().toLocaleDateString("en-GB")}`,
+      reportType,
+      sentAlerts,
+    );
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
   };
 
   const deleteReport = (id: number) => {

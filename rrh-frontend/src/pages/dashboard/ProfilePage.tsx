@@ -2,70 +2,86 @@ import { useState, useEffect } from "react";
 import type { PageProps } from "../../types";
 import { apiService } from "../../services/api";
 
+function getInitials(name: string) {
+  return name.split(" ").filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+}
+
+function fmtDate(iso: string) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
 export default function ProfilePage({ setPage }: PageProps) {
   const [profile, setProfile] = useState({
     name: "",
     email: "",
-    role: "Analyst",
-    phone: "",
-    location: "Rubavu District, Rwanda",
+    role: "",
+    institution: "",
     joinDate: "",
-    department: "Hydrology & Risk Assessment",
   });
 
   useEffect(() => {
     apiService.validateToken().then((user) => {
-      setProfile(p => ({
-        ...p,
-        name:  user.full_name || p.name,
-        email: user.email     || p.email,
-      }));
+      setProfile({
+        name:        user.full_name || "",
+        email:       user.email || "",
+        role:        user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Analyst",
+        institution: user.institution || "Rwanda Resilience Hub",
+        joinDate:    fmtDate(user.created_at),
+      });
     }).catch(() => {});
   }, []);
 
-  const [password, setPassword] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  });
+  const [password, setPassword] = useState({ current: "", new: "", confirm: "" });
+  const [pwError, setPwError]   = useState("");
+  const [banner, setBanner]     = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const [saved, setSaved] = useState(false);
-
-  const handleSaveProfile = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const showBanner = (type: "success" | "error", text: string) => {
+    setBanner({ type, text });
+    setTimeout(() => setBanner(null), 3500);
   };
 
-  const handleChangePassword = () => {
-    if (password.new === password.confirm && password.current) {
-      setSaved(true);
+  const handleSaveProfile = () => {
+    showBanner("success", "Profile updated successfully");
+  };
+
+  const handleChangePassword = async () => {
+    setPwError("");
+    if (password.new !== password.confirm) { setPwError("New passwords do not match."); return; }
+    if (password.new.length < 6)           { setPwError("Password must be at least 6 characters."); return; }
+    try {
+      await apiService.changePassword(password.current, password.new);
       setPassword({ current: "", new: "", confirm: "" });
-      setTimeout(() => setSaved(false), 3000);
+      showBanner("success", "Password updated successfully");
+    } catch (e: any) {
+      setPwError(e.message || "Current password is incorrect.");
     }
   };
 
   const handleSignOut = () => {
+    apiService.clearAuth();
     setPage("landing");
   };
 
+  const initials = getInitials(profile.name) || "RR";
+
   return (
     <div className="db-profile">
-      {/* Success Message */}
-      {saved && (
-        <div className="prof-success-banner">
-          ✓ Profile updated successfully
+      {banner && (
+        <div className={`prof-success-banner${banner.type === "error" ? " prof-error-banner" : ""}`}>
+          {banner.type === "success" ? "✓" : "✗"} {banner.text}
         </div>
       )}
 
-      {/* Profile Header Card */}
+      {/* Profile Header */}
       <div className="prof-header-card">
         <div className="prof-header-bg"></div>
         <div className="prof-header-content">
-          <div className="prof-avatar-xl">YT</div>
+          <div className="prof-avatar-xl">{initials}</div>
           <div className="prof-info">
-            <h1 className="prof-name">{profile.name}</h1>
+            <h1 className="prof-name">{profile.name || "—"}</h1>
             <p className="prof-title">{profile.role} · Observer</p>
-            <p className="prof-dept">{profile.department}</p>
+            <p className="prof-dept">{profile.institution}</p>
           </div>
         </div>
       </div>
@@ -74,15 +90,17 @@ export default function ProfilePage({ setPage }: PageProps) {
       <div className="prof-stats">
         <div className="prof-stat-box">
           <div className="prof-stat-label">Account Created</div>
-          <div className="prof-stat-value">{profile.joinDate}</div>
+          <div className="prof-stat-value">{profile.joinDate || "—"}</div>
         </div>
         <div className="prof-stat-box">
-          <div className="prof-stat-label">Location</div>
-          <div className="prof-stat-value">{profile.location}</div>
+          <div className="prof-stat-label">Monitoring Zone</div>
+          <div className="prof-stat-value">Sebeya Basin · Rubavu</div>
         </div>
         <div className="prof-stat-box">
           <div className="prof-stat-label">Last Login</div>
-          <div className="prof-stat-value">Today, 2:45 PM</div>
+          <div className="prof-stat-value">
+            Today, {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </div>
         </div>
         <div className="prof-stat-box">
           <div className="prof-stat-label">Account Status</div>
@@ -93,7 +111,7 @@ export default function ProfilePage({ setPage }: PageProps) {
       {/* Personal Information */}
       <div className="prof-panel">
         <h2 className="prof-panel-title">📋 Personal Information</h2>
-        
+
         <div className="prof-form-group">
           <label>Full Name</label>
           <input
@@ -115,33 +133,12 @@ export default function ProfilePage({ setPage }: PageProps) {
             />
           </div>
           <div className="prof-form-group">
-            <label>Phone Number</label>
-            <input
-              type="tel"
-              value={profile.phone}
-              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              placeholder="Enter phone"
-            />
-          </div>
-        </div>
-
-        <div className="prof-form-row">
-          <div className="prof-form-group">
-            <label>Location</label>
+            <label>Institution</label>
             <input
               type="text"
-              value={profile.location}
-              onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-              placeholder="Enter location"
-            />
-          </div>
-          <div className="prof-form-group">
-            <label>Department</label>
-            <input
-              type="text"
-              value={profile.department}
-              onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-              placeholder="Enter department"
+              value={profile.institution}
+              onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
+              placeholder="Enter institution"
             />
           </div>
         </div>
@@ -154,6 +151,8 @@ export default function ProfilePage({ setPage }: PageProps) {
       {/* Change Password */}
       <div className="prof-panel">
         <h2 className="prof-panel-title">🔐 Change Password</h2>
+
+        {pwError && <div className="prof-error-inline">{pwError}</div>}
 
         <div className="prof-form-group">
           <label>Current Password</label>
@@ -195,52 +194,15 @@ export default function ProfilePage({ setPage }: PageProps) {
         </button>
       </div>
 
-      {/* Account Actions */}
-      <div className="prof-panel">
-        <h2 className="prof-panel-title">⚙️ Account Actions</h2>
-
-        <div className="prof-action-grid">
-          <div className="prof-action-box">
-            <div className="prof-action-icon">📥</div>
-            <div className="prof-action-title">Download My Data</div>
-            <p className="prof-action-desc">Export all your account data</p>
-            <button className="prof-btn-secondary">Download</button>
-          </div>
-
-          <div className="prof-action-box">
-            <div className="prof-action-icon">📱</div>
-            <div className="prof-action-title">Activity Log</div>
-            <p className="prof-action-desc">View your login history</p>
-            <button className="prof-btn-secondary">View Log</button>
-          </div>
-
-          <div className="prof-action-box">
-            <div className="prof-action-icon">🌐</div>
-            <div className="prof-action-title">Active Sessions</div>
-            <p className="prof-action-desc">Manage your sessions</p>
-            <button className="prof-btn-secondary">Manage</button>
-          </div>
-
-          <div className="prof-action-box">
-            <div className="prof-action-icon">🗑️</div>
-            <div className="prof-action-title">Delete Account</div>
-            <p className="prof-action-desc">Permanently remove account</p>
-            <button className="prof-btn-danger">Delete</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Sign Out Section */}
+      {/* Sign Out */}
       <div className="prof-panel prof-signout-section">
         <h2 className="prof-panel-title">🚪 Sign Out</h2>
-        <p className="prof-signout-desc">You are currently logged in as <strong>{profile.name}</strong></p>
-        
+        <p className="prof-signout-desc">
+          Signed in as <strong>{profile.email || profile.name}</strong>
+        </p>
         <div className="prof-signout-options">
           <button className="prof-btn-secondary" onClick={handleSignOut}>
-            🚪 Sign Out Current Device
-          </button>
-          <button className="prof-btn-secondary">
-            🌐 Sign Out All Devices
+            🚪 Sign Out
           </button>
         </div>
       </div>

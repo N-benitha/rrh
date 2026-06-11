@@ -18,7 +18,7 @@ const fmtTime = (minsAgo: number) => {
 // Fallback mock used only when backend is unreachable
 const makeSebeyaAlerts = (): AlertItem[] => [
   {
-    id: 1, lvl: "crit",
+    id: 1, lvl: "critical",
     zone: "SEBY-DS-03 — Kanama/Rubavu",
     title: "CRITICAL — Downstream Water Level",
     desc: "Water level 2.8m exceeds the 2.5m critical threshold at SEBY-DS-03. Evacuation of riverside communities in Kanama sector required immediately.",
@@ -72,7 +72,7 @@ export type AlertItem = {
 };
 
 export default function AlertsScreen() {
-  // Web notifications pushed from the dashboard
+  // Notifications sent from the dashboard (fetched from backend history)
   const [webAlerts, setWebAlerts]       = useState<AlertItem[]>([]);
   // Sensor-based alerts from the API
   const [sensorAlerts, setSensorAlerts] = useState<AlertItem[]>([]);
@@ -81,8 +81,34 @@ export default function AlertsScreen() {
   const [refreshing, setRefreshing]     = useState(false);
   const [source, setSource]             = useState("Sebeya Sensors");
 
+  const fmtSentAt = (iso: string) => {
+    const d = new Date(iso);
+    const h = d.getHours(), m = d.getMinutes();
+    const ampm = h >= 12 ? "PM" : "AM";
+    return `${d.getMonth() + 1}/${d.getDate()} ${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
+  };
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const history = await apiService.getNotificationHistory();
+      const mapped: AlertItem[] = history.map((n, i) => ({
+        id:    `notif-${i}`,
+        lvl:   LVL_KEY[n.level?.toLowerCase()] ?? "high",
+        zone:  "Dashboard Alert",
+        title: n.title,
+        desc:  n.body,
+        time:  fmtSentAt(n.sent_at),
+        isWeb: true,
+      }));
+      setWebAlerts(mapped);
+    } catch {
+      // Backend unreachable — keep existing state
+    }
+  }, []);
+
   const load = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
+    await loadHistory();
     try {
       const data = await apiService.getWeatherAlerts();
       if (data.alerts && Array.isArray(data.alerts) && data.alerts.length > 0) {
@@ -104,34 +130,33 @@ export default function AlertsScreen() {
         }
         setSource("OpenWeather Live");
       } else {
-        // API returned nothing — show demo data
         setSensorAlerts(makeSebeyaAlerts());
         setAllNormal(false);
       }
     } catch {
-      // Backend unreachable — show demo data
       setSensorAlerts(makeSebeyaAlerts());
       setAllNormal(false);
     }
     setRefreshing(false);
-  }, []);
+  }, [loadHistory]);
 
   useEffect(() => { load(); }, [load]);
 
-  // While this tab is focused: drain queue immediately, then every 5 s
+  // While this tab is focused: refresh history + drain in-memory queue every 5 s
   useFocusEffect(
     useCallback(() => {
+      loadHistory(); // reload from backend whenever tab opens
       const drain = () => {
         const queued = drainQueue();
-        if (queued.length === 0) return;
-        setWebAlerts(prev => [...queued, ...prev]);
-        const urgent = queued.find(n => n.lvl === "crit" || n.lvl === "high");
-        if (urgent) Alert.alert(urgent.title, urgent.desc, [{ text: "OK" }]);
+        if (queued.length > 0) {
+          loadHistory(); // re-fetch so new item appears in persisted list
+          const urgent = queued.find(n => n.lvl === "crit" || n.lvl === "high");
+          if (urgent) Alert.alert(urgent.title, urgent.desc, [{ text: "OK" }]);
+        }
       };
-      drain(); // immediate on focus
       const id = setInterval(drain, 5_000);
       return () => clearInterval(id);
-    }, [])
+    }, [loadHistory])
   );
 
   const onRefresh = () => { load(true); };
@@ -195,7 +220,7 @@ export default function AlertsScreen() {
         ListHeaderComponent={
           webAlerts.length > 0 ? (
             <View style={s.sectionHeader}>
-              <Text style={s.sectionHeaderText}>📱 Dashboard Notifications</Text>
+              <Text style={s.sectionHeaderText}>📢 Sent Notifications ({webAlerts.length})</Text>
             </View>
           ) : null
         }

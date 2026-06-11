@@ -1,5 +1,9 @@
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+
+import { apiService } from "../services/api";
 
 // Show alerts even when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -11,10 +15,39 @@ Notifications.setNotificationHandler({
   }),
 });
 
+async function registerExpoPushToken() {
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") return;
+
+    const projectId =
+      (Constants.expoConfig?.extra?.eas?.projectId as string | undefined) ??
+      (Constants.easConfig?.projectId as string | undefined);
+
+    const tokenData = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    );
+    await apiService.registerPushToken(tokenData.data);
+    console.log("[RRH] Push token registered:", tokenData.data);
+  } catch (err) {
+    // Fails on simulators or when projectId is not set — safe to ignore in dev
+    console.log("[RRH] Push token registration skipped:", err);
+  }
+}
+
 export function useNotifications() {
   useEffect(() => {
-    // Request permission for local notifications (works in Expo Go SDK 54)
-    Notifications.requestPermissionsAsync().catch(() => {});
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("rrh-alerts", {
+        name: "Flood Alerts",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF0000",
+        sound: "default",
+      }).catch(() => {});
+    }
+
+    registerExpoPushToken();
   }, []);
 }
 
@@ -23,8 +56,9 @@ export async function showLocalNotification(title: string, body: string) {
   try {
     await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
-      trigger: null, // show immediately
-    });
+      trigger: null,
+      ...(Platform.OS === "android" ? { channelId: "rrh-alerts" } : {}),
+    } as any);
   } catch {
     // Silently ignore if permissions not granted
   }

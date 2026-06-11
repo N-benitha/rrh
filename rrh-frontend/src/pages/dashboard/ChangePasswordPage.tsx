@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiService } from '../../services/api';
 
 interface PasswordForm {
   current: string;
@@ -15,6 +16,7 @@ export const ChangePasswordPage: React.FC = () => {
 
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,14 +51,18 @@ export const ChangePasswordPage: React.FC = () => {
     return newErrors.length === 0;
   };
 
-  const handleChangePassword = () => {
-    if (validatePassword()) {
-      // Simulate API call
-      localStorage.setItem('passwordLastChanged', new Date().toISOString());
+  const handleChangePassword = async () => {
+    if (!validatePassword()) return;
+    setLoading(true);
+    try {
+      await apiService.changePassword(form.current, form.newPassword);
       setSuccess(true);
       setForm({ current: '', newPassword: '', confirm: '' });
-      
       setTimeout(() => setSuccess(false), 5000);
+    } catch (e: any) {
+      setErrors([e.message || 'Current password is incorrect.']);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -157,8 +163,8 @@ export const ChangePasswordPage: React.FC = () => {
         <button className="cp-btn-reset" onClick={handleResetForm}>
           Clear Form
         </button>
-        <button className="cp-btn-save" onClick={handleChangePassword}>
-          Update Password
+        <button className="cp-btn-save" onClick={handleChangePassword} disabled={loading}>
+          {loading ? 'Updating…' : 'Update Password'}
         </button>
       </div>
     </div>

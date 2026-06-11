@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8001/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 
 class APIService {
   private authToken: string | null = localStorage.getItem("authToken");
@@ -54,7 +54,10 @@ class APIService {
   }
 
   async validateToken() {
-    return this.get<{ email: string; full_name: string }>("/auth/me");
+    return this.get<{
+      email: string; full_name: string;
+      institution: string; role: string; created_at: string;
+    }>("/auth/me");
   }
 
   async sendVerification(email: string) {
@@ -197,10 +200,12 @@ class APIService {
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
-    return this.put<Record<string, unknown>>("/user/password", {
-      current_password: currentPassword,
-      new_password: newPassword,
+    const params = new URLSearchParams({ current_password: currentPassword, new_password: newPassword });
+    const r = await fetch(`${API_BASE_URL}/auth/change-password?${params}`, {
+      method: "POST",
+      headers: this.getHeaders(),
     });
+    return this.handleResponse<{ message: string }>(r);
   }
 
   // ── Push notifications ─────────────────────────────────────────────────────

@@ -348,7 +348,7 @@ export default function AlertsManagementPage() {
 
       {/* ── Send custom message ── */}
       <div className="am-panel" style={{ marginBottom: 24 }}>
-        <h2 className="am-panel-title">📱 Send Custom Message to Mobile App</h2>
+        <h2 className="am-panel-title">📱 Send <map name=""></map>message to Mobile App</h2>
         {msgResult && (
           <div style={{
             marginBottom: 12, padding: "10px 14px", borderRadius: 6, fontSize: 13, fontWeight: 600,

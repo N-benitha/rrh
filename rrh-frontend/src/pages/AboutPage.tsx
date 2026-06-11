@@ -50,8 +50,8 @@ export default function AboutPage({ setPage }: PageProps) {
           <div className="sec-kicker" style={{ color: "rgba(255,255,255,.3)" }}>About the system</div>
           <h1 className="inner-h1">Rwanda <em>Resilience Hub</em></h1>
           <p className="inner-sub">
-            A real-time flood risk intelligence and early-warning platform for Rwanda's river basins
-            and wetland zones — powered by machine learning, live sensor data, and geospatial analytics.
+            A real-time flood risk intelligence and early-warning platform for the Sebeya River Basin,
+            Rubavu District — powered by machine learning, live sensor data, and geospatial analytics.
           </p>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function AboutPage({ setPage }: PageProps) {
                 on manual field reports.
               </p>
               <div className="stat-strip">
-                {[["5+","Monitored Zones"],["91%","ML Accuracy"],["15m","Update Interval"],["3","Data Sources"]].map(([v,l]) => (
+                {[["3","Sensor Stations"],["91%","ML Accuracy"],["15m","Update Interval"],["2","Data Sources"]].map(([v,l]) => (
                   <div className="stat-strip-item" key={l}>
                     <div className="stat-strip-val">{v}</div>
                     <div className="stat-strip-lbl">{l}</div>
@@ -111,7 +111,7 @@ export default function AboutPage({ setPage }: PageProps) {
           <h2 className="sec-h2">Everything needed for flood risk management</h2>
           <div className="feat-grid">
             {[
-              ["Live Zone Monitoring","Real-time rainfall, river level, and risk score tracking across all monitored wetland and river-basin zones."],
+              ["Live Sensor Monitoring","Real-time rainfall, river level, and risk score tracking across 3 Sebeya Basin stations — Downstream, Midstream, and Upstream."],
               ["ML Risk Prediction","Random Forest classifier trained on historical flood data delivers 91%+ accuracy risk scores, updated every 15 minutes."],
               ["Interactive Risk Map","Leaflet-based map showing all zones colour-coded by risk level, with clickable pins for zone detail."],
               ["Automated Alert System","Configurable alert rules trigger notifications for rainfall, river level, and risk-score thresholds across any zone."],
@@ -131,14 +131,12 @@ export default function AboutPage({ setPage }: PageProps) {
         <div className="sec-in">
           <div className="about-grid">
             <div>
-              <div className="sec-kicker">Monitored zones</div>
-              <h2 className="sec-h2">Rwanda's highest-risk flood areas</h2>
+              <div className="sec-kicker">Sensor stations</div>
+              <h2 className="sec-h2">Sebeya River Basin · Rubavu District</h2>
               {[
-                ["Nyabugogo Wetland","Kigali City — Urban flood risk zone"],
-                ["Sebeya River Basin","Western Province — High-rainfall basin"],
-                ["Nyabarongo River","Central Rwanda — Primary flood corridor"],
-                ["Kigali Urban Zone","Greater Kigali — Drainage infrastructure"],
-                ["Akagera Wetlands","Eastern Province — Seasonal flood plain"],
+                ["SEBY-DS-03","Kanama / Rubavu — Downstream · Critical threshold 2.5 m"],
+                ["SEBY-MS-02","Nyundo — Midstream · Critical threshold 70 mm/h rainfall"],
+                ["SEBY-US-01","Rutsiro — Upstream · Early-warning headwater station"],
               ].map(([name, region]) => (
                 <div className="meta-row" key={name}>
                   <span className="meta-k" style={{ textTransform: "none", letterSpacing: 0 }}>{name}</span>
@@ -157,3 +155,4 @@ export default function AboutPage({ setPage }: PageProps) {
     </div>
   );
 }
+

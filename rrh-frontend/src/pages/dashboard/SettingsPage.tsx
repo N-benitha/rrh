@@ -57,8 +57,8 @@ export default function SettingsPage() {
 
           <div className="set-toggle-item">
             <div>
-              <div className="set-toggle-label">💬 SMS Alerts</div>
-              <div className="set-toggle-desc">Receive alerts via SMS</div>
+              <div className="set-toggle-label">📱 Mobile Push Notifications</div>
+              <div className="set-toggle-desc">Receive alerts on the RRH mobile app (Expo)</div>
             </div>
             <label className="set-toggle">
               <input
@@ -229,18 +229,22 @@ export default function SettingsPage() {
         <h2 className="set-panel-title">📊 Data & Privacy</h2>
 
         <div className="set-info-box">
-          <div className="set-info-title">Account Data</div>
+          <div className="set-info-title">System Information</div>
           <div className="set-info-row">
-            <span>Storage Used:</span>
-            <strong>2.4 GB of 10 GB</strong>
+            <span>Monitoring Area:</span>
+            <strong>Sebeya River Basin · Rubavu District</strong>
+          </div>
+          <div className="set-info-row">
+            <span>Active Sensors:</span>
+            <strong>3 stations (SEBY-DS-03, SEBY-MS-02, SEBY-US-01)</strong>
           </div>
           <div className="set-info-row">
             <span>Last Login:</span>
             <strong>{new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })} at {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</strong>
           </div>
           <div className="set-info-row">
-            <span>System:</span>
-            <strong>Sebeya River Basin · Rubavu District</strong>
+            <span>Data Source:</span>
+            <strong>OpenWeather API · IoT Sensors</strong>
           </div>
         </div>
 

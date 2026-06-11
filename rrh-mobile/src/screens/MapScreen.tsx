@@ -1,48 +1,19 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import MapView, { Marker, Polyline, Callout, PROVIDER_DEFAULT } from "react-native-maps";
 import { Colors } from "../constants/colors";
+import { apiService } from "../services/api";
 
-const SENSORS = [
-  {
-    id: "SEBY-DS-03",
-    place: "Kanama",
-    district: "Rubavu District",
-    position: "Downstream",
-    level: "CRITICAL",
-    water: "2.8m",
-    rainfall: "85mm/h",
-    note: "Exceeds 2.5m critical threshold",
-    lat: -1.6849,
-    lng: 29.3892,
-    color: "#dc2626",
-  },
-  {
-    id: "SEBY-MS-02",
-    place: "Nyundo",
-    district: "Rubavu District",
-    position: "Midstream",
-    level: "HIGH",
-    water: "2.1m",
-    rainfall: "68mm/h",
-    note: "Approaching 70mm/h critical threshold",
-    lat: -1.5554,
-    lng: 29.5375,
-    color: "#ea580c",
-  },
-  {
-    id: "SEBY-US-01",
-    place: "Rutsiro",
-    district: "Rutsiro District",
-    position: "Upstream",
-    level: "MODERATE",
-    water: "1.4m",
-    rainfall: "52mm/h",
-    note: "Rising trend — monitor closely",
-    lat: -1.3954,
-    lng: 29.4849,
-    color: "#ca8a04",
-  },
+const BASE_sensors = [
+  { id: "SEBY-DS-03", place: "Kanama",  district: "Rubavu District",  position: "Downstream", lat: -1.6849, lng: 29.3892 },
+  { id: "SEBY-MS-02", place: "Nyundo",  district: "Rubavu District",  position: "Midstream",  lat: -1.5554, lng: 29.5375 },
+  { id: "SEBY-US-01", place: "Rutsiro", district: "Rutsiro District", position: "Upstream",   lat: -1.3954, lng: 29.4849 },
+];
+
+const MOCK_sensors = [
+  { ...BASE_sensors[0], level: "CRITICAL", water: "2.8m", rainfall: "85mm/h", note: "Exceeds 2.5m critical threshold",        color: "#dc2626" },
+  { ...BASE_sensors[1], level: "HIGH",     water: "2.1m", rainfall: "68mm/h", note: "Approaching 70mm/h critical threshold",  color: "#ea580c" },
+  { ...BASE_sensors[2], level: "MODERATE", water: "1.4m", rainfall: "52mm/h", note: "Rising trend — monitor closely",         color: "#ca8a04" },
 ];
 
 // Approximate Sebeya River path (upstream → Lake Kivu)
@@ -71,8 +42,28 @@ const CENTER = {
 };
 
 export default function MapScreen() {
+  const [sensors, setSensors] = useState(MOCK_sensors);
   const [selected, setSelected] = useState<string | null>(null);
-  const selectedSensor = SENSORS.find(s => s.id === selected);
+  const selectedSensor = sensors.find(s => s.id === selected);
+
+  useEffect(() => {
+    apiService.getZones().then((zones: any[]) => {
+      if (!Array.isArray(zones) || zones.length === 0) return;
+      setSensors(BASE_sensors.map((base, i) => {
+        const z = zones[i] ?? zones[0];
+        const lvl = (z.level ?? "LOW").toUpperCase();
+        const color = lvl === "CRITICAL" ? "#dc2626" : lvl === "HIGH" ? "#ea580c" : lvl === "MODERATE" ? "#ca8a04" : "#16a34a";
+        return {
+          ...base,
+          level: lvl,
+          water: z.river ? `${z.river}m` : MOCK_sensors[i].water,
+          rainfall: z.rainfall ?? MOCK_sensors[i].rainfall,
+          note: z.description ?? MOCK_sensors[i].note,
+          color,
+        };
+      }));
+    }).catch(() => {/* keep mock */});
+  }, []);
 
   return (
     <View style={s.root}>
@@ -91,7 +82,7 @@ export default function MapScreen() {
         />
 
         {/* Sensor markers */}
-        {SENSORS.map(sensor => (
+        {sensors.map(sensor => (
           <Marker
             key={sensor.id}
             coordinate={{ latitude: sensor.lat, longitude: sensor.lng }}
@@ -145,7 +136,7 @@ export default function MapScreen() {
           </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chips}>
-            {SENSORS.map(s2 => (
+            {sensors.map(s2 => (
               <TouchableOpacity
                 key={s2.id}
                 style={[s.chip, { borderColor: LEVEL_COLOR[s2.level] }]}

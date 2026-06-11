@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { LineChart, BarChart } from "../../components/dashboard/Charts";
-import { ZONES, RAINFALL_DATA, ML_HISTORY } from "../../constants";
+import { RAINFALL_DATA, ML_HISTORY } from "../../constants";
 import { apiService } from "../../services/api";
+import { useZones } from "../../hooks/useData";
 
 // Per-sensor river level — last 24 h (2-hour intervals)
 const SENSOR_RIVER: Record<number, { t: string; v: number }[]> = {
@@ -58,6 +59,7 @@ const PLACE: Record<number, string> = {
 };
 
 export default function AnalyticsPage() {
+  const { zones } = useZones();
   const [selectedZone, setSelectedZone] = useState<number>(1);
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
 
@@ -81,12 +83,12 @@ export default function AnalyticsPage() {
       .finally(() => setRainfallLoading(false));
   }, []);
 
-  const zone = ZONES.find((z) => z.id === selectedZone) ?? ZONES[0];
+  const zone = zones.find((z) => z.id === selectedZone) ?? zones[0];
   const riverData = SENSOR_RIVER[selectedZone] ?? SENSOR_RIVER[1];
   const rainfallToday = SENSOR_RAINFALL_TODAY[selectedZone] ?? SENSOR_RAINFALL_TODAY[1];
 
-  const totalRisk    = Math.round(ZONES.reduce((sum, z) => sum + z.score, 0) / ZONES.length);
-  const criticalCount = ZONES.filter((z) => z.level === "CRITICAL").length;
+  const totalRisk    = Math.round(zones.reduce((sum, z) => sum + z.score, 0) / zones.length);
+  const criticalCount = zones.filter((z) => z.level === "CRITICAL").length;
   const avgRainfall  = Math.round(rainfallData.reduce((sum, d) => sum + d.mm, 0) / (rainfallData.length || 1));
 
   return (
@@ -102,7 +104,7 @@ export default function AnalyticsPage() {
         <div className="ana-metric-card">
           <div className="ana-metric-label">🔴 Critical Sensors</div>
           <div className="ana-metric-val" style={{ color: "#DC2626" }}>{criticalCount}</div>
-          <div className="ana-metric-change">of {ZONES.length} Sebeya sensors</div>
+          <div className="ana-metric-change">of {zones.length} Sebeya sensors</div>
         </div>
         <div className="ana-metric-card">
           <div className="ana-metric-label">🌧️ Avg Rainfall (7d)</div>
@@ -136,7 +138,7 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="ana-zone-grid">
-          {ZONES.map((z) => (
+          {zones.map((z) => (
             <div
               key={z.id}
               className={`ana-zone-card ${selectedZone === z.id ? "selected" : ""}`}
@@ -251,7 +253,7 @@ export default function AnalyticsPage() {
             </tr>
           </thead>
           <tbody>
-            {ZONES.map((z) => (
+            {zones.map((z) => (
               <tr
                 key={z.id}
                 style={{ cursor: "pointer", background: selectedZone === z.id ? "rgba(59,130,246,0.06)" : undefined }}

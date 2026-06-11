@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "../styles/landing.css";
 import { FEATURES,} from "../constants";
 import { Footer } from "../components/shared";
@@ -14,6 +15,21 @@ const STATS: [string, string, string][] = [
 ];
 
 export default function LandingPage({ setPage }: PageProps) {
+  const [contact, setContact] = useState({ name: "", email: "", message: "" });
+  const [sent, setSent]       = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!contact.name || !contact.email || !contact.message) return;
+    setSending(true);
+    setTimeout(() => {
+      setSending(false);
+      setSent(true);
+      setContact({ name: "", email: "", message: "" });
+    }, 800);
+  };
+
   return (
     <div className="page">
 
@@ -87,6 +103,83 @@ export default function LandingPage({ setPage }: PageProps) {
       </section>
 
     
+      {/* ══ CONTACT ══ */}
+      <section className="lp-sec lp-w" style={{ paddingTop: 64, paddingBottom: 64 }}>
+        <div className="lp-in" style={{ maxWidth: 640 }}>
+          <div className="lp-eyebrow lp-ey-or">Get in Touch</div>
+          <h2 className="lp-h2 lp-h2-dk">Send us a message</h2>
+          <p className="lp-lead lp-lead-dk" style={{ marginBottom: 32 }}>
+            Have a question, feedback, or want to request access for your organisation? We'd love to hear from you.
+          </p>
+
+          {sent ? (
+            <div style={{
+              background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10,
+              padding: "20px 24px", color: "#15803d", fontWeight: 600, fontSize: 15,
+            }}>
+              ✓ Message sent! We'll get back to you within 24 hours.
+            </div>
+          ) : (
+            <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={contact.name}
+                    onChange={e => setContact({ ...contact, name: e.target.value })}
+                    placeholder="Yvette Tuyizere"
+                    style={{
+                      padding: "10px 14px", borderRadius: 8, border: "1px solid #d1d5db",
+                      fontSize: 14, outline: "none", fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={contact.email}
+                    onChange={e => setContact({ ...contact, email: e.target.value })}
+                    placeholder="you@example.com"
+                    style={{
+                      padding: "10px 14px", borderRadius: 8, border: "1px solid #d1d5db",
+                      fontSize: 14, outline: "none", fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>Message *</label>
+                <textarea
+                  required
+                  rows={5}
+                  value={contact.message}
+                  onChange={e => setContact({ ...contact, message: e.target.value })}
+                  placeholder="Tell us how we can help, or share your feedback about the platform..."
+                  style={{
+                    padding: "10px 14px", borderRadius: 8, border: "1px solid #d1d5db",
+                    fontSize: 14, outline: "none", fontFamily: "inherit", resize: "vertical",
+                  }}
+                />
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="lp-btn-o"
+                  style={{ opacity: sending ? 0.7 : 1 }}
+                >
+                  {sending ? "Sending…" : "Send Message →"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </section>
+
       {/* ══ CTA ══ */}
       <section className="lp-sec lp-or" style={{ paddingTop: 60, paddingBottom: 60 }}>
         <div className="lp-cta-in">

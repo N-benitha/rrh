@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import os
 
 from app.models.database import engine, Base
+from app.models import push_notification, push_token  # noqa: F401 — registers models with Base
 from app.routers import auth, flood_risk, sensors, alerts, dashboard, weather, notifications
 from app.core.config import settings
 from app.core.security import verify_token

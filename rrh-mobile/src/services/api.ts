@@ -1,9 +1,15 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
 
-// Physical phone / Expo Go: uses your PC's LAN IP (run `ipconfig` to verify)
-// Android emulator: replace with http://10.0.2.2:8001/api/v1
-const BASE_URL = "http://192.168.1.185:8001/api/v1";
+// Dynamically resolve backend host from Expo dev server — no more manual IP updates
+const getBaseUrl = (): string => {
+  const host = Constants.expoConfig?.hostUri?.split(":")[0];
+  if (host) return `http://${host}:8000/api/v1`;
+  return "http://192.168.1.185:8000/api/v1"; // fallback
+};
+
+const BASE_URL = getBaseUrl();
 
 const TOKEN_KEY = "rrh_token";
 
@@ -82,6 +88,11 @@ export const apiService = {
   async getPendingNotifications(): Promise<{ title: string; body: string; level: string }[]> {
     const res = await http.get("/notifications/pending");
     return res.data.notifications ?? [];
+  },
+
+  async getNotificationHistory(): Promise<{ title: string; body: string; level: string; sent_at: string }[]> {
+    const res = await http.get("/notifications/history");
+    return res.data.history ?? [];
   },
 
   async sendVerification(email: string) {
