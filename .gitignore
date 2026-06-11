@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+backend/venv/
+.venv/
+env/
+.env/
+
+# Editor directories and files
+.vscode/*
+
+# Python
+__pycache__/
+*.py[cod]
+*.mo
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+backend/**/lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.docker
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Tanstack
+.tanstack/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# Additional ignores
+backend/auth-service/db/migrations/versions/*.py
