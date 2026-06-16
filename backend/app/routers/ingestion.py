@@ -5,8 +5,10 @@ from app.database import get_db
 from app.ingestion.nasa_power import fetch_nasa_power_for_all_regions, preview_nasa_power
 from app.ingestion.openweather import fetch_openweather_for_all_regions, preview_openweather
 from app.models.region import Region
+from app.models.sensor_reading import DataSource, SensorReading
 from app.models.user import Users
-from app.services.auth import require_admin
+from app.schemas.sensor_reading import IoTReadingRequest
+from app.services.auth import get_current_user, require_admin
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
@@ -67,3 +69,41 @@ def trigger_all(
         "openweather": {"readings_inserted": ow_count},
         "total": nasa_count + ow_count,
     }
+
+
+@router.post("/iot", status_code=status.HTTP_201_CREATED)
+def ingest_iot_readings(
+    readings: list[IoTReadingRequest],
+    db: Session = Depends(get_db),
+    _current_user: Users = Depends(get_current_user),
+):
+    """Accept a batch of IoT simulator readings."""
+    if not readings:
+        return {"readings_inserted": 0}
+
+    region_ids = {r.region_id for r in readings}
+    existing_ids = {
+        row.id
+        for row in db.query(Region.id).filter(Region.id.in_(region_ids)).all()
+    }
+    unknown = region_ids - existing_ids
+    if unknown:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Unknown region_id(s): {[str(i) for i in unknown]}",
+        )
+
+    for r in readings:
+        db.add(SensorReading(
+            region_id=r.region_id,
+            source=DataSource.IOT_SIM,
+            rainfall_mm=r.rainfall_mm,
+            temperature_c=r.temperature_c,
+            humidity_pct=r.humidity_pct,
+            wind_speed_ms=r.wind_speed_ms,
+            soil_moisture_pct=r.soil_moisture_pct,
+            river_level_m=r.river_level_m,
+            recorded_at=r.recorded_at,
+        ))
+    db.commit()
+    return {"readings_inserted": len(readings)}
