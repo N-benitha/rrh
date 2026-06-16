@@ -14,7 +14,7 @@ from app.schemas.region import RegionDetailResponse, RegionResponse
 from app.schemas.sensor_reading import SensorReadingResponse
 from app.services.auth import get_current_user
 
-router = APIRouter(prefix="/api/regions", tags=["regions"])
+router = APIRouter(prefix="/regions", tags=["regions"])
 
 
 @router.get("", response_model=list[RegionResponse])

@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.ingestion.scheduler import start_scheduler
-from app.routers import auth, regions, ingestion, users
+from app.ml.loader import load_models
+from app.routers import auth, regions, ingestion, predict, users
 
 logger  = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     logging.basicConfig(level=logging.INFO)
     logger.info("Starting data ingestion scheduler...")
     start_scheduler()
+    load_models()
     yield
     # Shutdown: daemon threads die automatically
     logger.info("Shutting down.")
@@ -40,10 +42,11 @@ app.add_middleware(
 )
 
 # Routers
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(regions.router)
-app.include_router(ingestion.router)
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(regions.router, prefix="/api/v1")
+app.include_router(ingestion.router, prefix="/api/v1")
+app.include_router(predict.router, prefix="/api/v1")
 
 @app.get("/health", tags=["system"])
 def health_check():

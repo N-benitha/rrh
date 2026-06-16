@@ -141,6 +141,27 @@ def _parse_response(data: dict, region_id, db: Session) -> int:
     return inserted
 
 
+def preview_nasa_power(region: Region) -> dict:
+    """Fetch raw NASA POWER API response for one region without storing anything.
+
+    Returns the raw parsed JSON from the API.
+    """
+    end_date = datetime.now(timezone.utc) - timedelta(days=2)
+    start_date = end_date - timedelta(days=3)
+
+    url = _build_url(
+        latitude=region.latitude,
+        longitude=region.longitude,
+        start=start_date.strftime("%Y%m%d"),
+        end=end_date.strftime("%Y%m%d"),
+    )
+
+    with httpx.Client(timeout=60.0) as client:
+        response = client.get(url)
+        response.raise_for_status()
+        return response.json()
+
+
 def fetch_nasa_power_for_region(
     region: Region, days_back: int, db: Session
 ) -> int:

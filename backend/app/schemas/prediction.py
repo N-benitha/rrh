@@ -15,3 +15,14 @@ class PredictionResponse(BaseModel):
     predicted_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PredictRequest(BaseModel):
+    region_id: UUID
+
+
+class PredictResponse(BaseModel):
+    zone_id: str
+    risk_level: str
+    confidence: float
+    timestamp: datetime

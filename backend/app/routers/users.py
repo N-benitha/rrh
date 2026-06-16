@@ -9,7 +9,7 @@ from app.schemas.user import UserResponse, UserUpdate
 from app.services import user as user_service
 from app.services.auth import get_current_user, require_admin
 
-router = APIRouter(prefix="/api/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserResponse)

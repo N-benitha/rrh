@@ -37,6 +37,27 @@ logger = logging.getLogger(__name__)
 OPENWEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 
 
+def preview_openweather(region: Region) -> dict:
+    """Fetch raw OpenWeather API response for one region without storing anything.
+
+    Returns the raw parsed JSON from the API.
+    """
+    if not settings.OPENWEATHER_API_KEY:
+        raise ValueError("OPENWEATHER_API_KEY not set in environment")
+
+    params = {
+        "lat": region.latitude,
+        "lon": region.longitude,
+        "appid": settings.OPENWEATHER_API_KEY,
+        "units": "metric",
+    }
+
+    with httpx.Client(timeout=30.0) as client:
+        response = client.get(OPENWEATHER_URL, params=params)
+        response.raise_for_status()
+        return response.json()
+
+
 def fetch_openweather_for_region(region: Region, db: Session) -> int:
     """Fetch current weather from OpenWeather for a single region.
 

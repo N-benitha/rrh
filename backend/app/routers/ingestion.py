@@ -1,11 +1,38 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
-from app.ingestion.nasa_power import fetch_nasa_power_for_all_regions
-from app.ingestion.openweather import fetch_openweather_for_all_regions
+from app.database import get_db
+from app.ingestion.nasa_power import fetch_nasa_power_for_all_regions, preview_nasa_power
+from app.ingestion.openweather import fetch_openweather_for_all_regions, preview_openweather
+from app.models.region import Region
 from app.models.user import Users
 from app.services.auth import require_admin
 
-router = APIRouter(prefix="/api/ingestion", tags=["ingestion"])
+router = APIRouter(prefix="/ingestion", tags=["ingestion"])
+
+
+@router.get("/nasa-power/preview")
+def preview_nasa_power_route(
+    db: Session = Depends(get_db),
+    _admin: Users = Depends(require_admin),
+):
+    """Return raw NASA POWER API response for the first region. Admin only."""
+    region = db.query(Region).first()
+    if not region:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No regions found")
+    return preview_nasa_power(region)
+
+
+@router.get("/openweather/preview")
+def preview_openweather_route(
+    db: Session = Depends(get_db),
+    _admin: Users = Depends(require_admin),
+):
+    """Return raw OpenWeather API response for the first region. Admin only."""
+    region = db.query(Region).first()
+    if not region:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No regions found")
+    return preview_openweather(region)
 
 
 @router.post("/nasa-power")

@@ -9,7 +9,7 @@ from app.schemas.base import SuccessResponse
 from app.services import auth as auth_service
 from app.services.auth import auth_scheme, get_current_user
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
