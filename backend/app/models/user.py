@@ -15,3 +15,4 @@ class Users(Base, BaseModelMixin, SoftDeleteMixin):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER, nullable=False)
     email_alerts_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     alerts: Mapped[list["Alert"]] = relationship(back_populates="user")
+    subscriptions: Mapped[list["UserRegionSubscription"]] = relationship(back_populates="user")  # noqa: F821

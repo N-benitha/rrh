@@ -31,7 +31,8 @@ class Region(Base):
     predictions: Mapped[list["Prediction"]] = relationship(
         back_populates="region"
     )
-    alerts: Mapped[list["Alert"]] = relationship(back_populates="region") 
+    alerts: Mapped[list["Alert"]] = relationship(back_populates="region")
+    subscriptions: Mapped[list["UserRegionSubscription"]] = relationship(back_populates="region")  # noqa: F821
 
     def __repr__(self):
         return f"<Region {self.name}>"

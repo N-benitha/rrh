@@ -12,6 +12,7 @@ from app.models.enums import RiskLevel
 from app.models.prediction import Prediction
 from app.models.region import Region
 from app.models.sensor_reading import DataSource, SensorReading
+from app.services.alert_engine import trigger_alerts
 
 FEATURE_COLUMNS = [
     "rainfall_mm", "temperature_c", "humidity_pct", "wind_speed_ms",
@@ -138,6 +139,8 @@ def run_inference(region_id: UUID, db: Session) -> dict:
     )
     db.add(prediction)
     db.commit()
+
+    trigger_alerts(region_id=region_id, risk_level=RiskLevel(risk_label), confidence_score=confidence, db=db)
 
     return {
         "zone_id": region.name,

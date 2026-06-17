@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.ingestion.scheduler import start_scheduler
 from app.ml.loader import load_models
-from app.routers import auth, regions, ingestion, predict, users
+from app.routers import admin, alerts, auth, ingestion, predict, regions, subscriptions, users
 
 logger  = logging.getLogger(__name__)
 
@@ -47,6 +47,9 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(regions.router, prefix="/api/v1")
 app.include_router(ingestion.router, prefix="/api/v1")
 app.include_router(predict.router, prefix="/api/v1")
+app.include_router(subscriptions.router, prefix="/api/v1")
+app.include_router(alerts.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 
 @app.get("/health", tags=["system"])
 def health_check():

@@ -28,5 +28,8 @@ httpx==0.28.1
 # Email alerts (Week 3)
 resend==2.0.0
 
+# html templates
+jinja2==3.1.2
+
 # CORS
 python-multipart==0.0.20

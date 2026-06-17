@@ -36,7 +36,8 @@ class Settings(BaseSettings):
 
     # Email (Resend)
     RESEND_API_KEY: Optional[str] = None
-    ALERT_FROM_EMAIL: str = "alerts@yourdomain.com"
+    RESEND_SENDER_EMAIL: str = ""
+    RESEND_TEST_RECIPIENT: str = ""
 
     # CORS
     FRONTEND_URL: str = ""
