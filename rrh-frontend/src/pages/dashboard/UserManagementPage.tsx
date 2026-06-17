@@ -66,7 +66,7 @@ export default function UserManagementPage() {
     setLoading(true);
     apiService
       .getAdminUsers(1, 50)
-      .then((data) => setUsers(data as BackendUser[]))
+      .then((data) => setUsers(data))
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users"))
       .finally(() => setLoading(false));
   }, []);
