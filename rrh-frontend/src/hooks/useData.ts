@@ -78,7 +78,37 @@ export function useZones() {
     apiService
       .getZones()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setZones(data as Zone[]);
+        if (!Array.isArray(data) || data.length === 0) return;
+        const mapped: Zone[] = (data as {
+          id: string;
+          name: string;
+          latitude: number;
+          longitude: number;
+          description: string | null;
+          risk_level: string;
+          latest_prediction: { confidence_score: number; predicted_at: string } | null;
+        }[]).map((r, i) => {
+          const raw = r.risk_level?.toUpperCase() ?? "LOW";
+          const level = (["CRITICAL", "HIGH", "MODERATE", "LOW"].includes(raw) ? raw : "LOW") as Zone["level"];
+          const score = r.latest_prediction
+            ? Math.round(r.latest_prediction.confidence_score * 100)
+            : 0;
+          return {
+            id: i + 1,
+            name: r.name,
+            region: r.name,
+            lat: r.latitude,
+            lng: r.longitude,
+            level,
+            score,
+            rainfall: "—",
+            river: "—",
+            trend: "st" as const,
+            updated: r.latest_prediction?.predicted_at ?? new Date().toISOString(),
+            desc: r.description ?? "",
+          };
+        });
+        setZones(mapped);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
