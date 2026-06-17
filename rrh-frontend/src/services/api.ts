@@ -31,12 +31,22 @@ class APIService {
     return this.handleResponse<T>(r);
   }
 
-  private async put<T>(path: string, body: unknown): Promise<T> {
+  private async patch<T>(path: string, body: unknown = {}): Promise<T> {
     const r = await fetch(`${API_BASE_URL}${path}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: this.getHeaders(),
       body: JSON.stringify(body),
     });
+    return this.handleResponse<T>(r);
+  }
+
+  private async delete<T>(path: string): Promise<T> {
+    const r = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    // 204 No Content has no body
+    if (r.status === 204) return undefined as T;
     return this.handleResponse<T>(r);
   }
 
@@ -46,11 +56,15 @@ class APIService {
     return this.post<{ access_token: string; user: Record<string, unknown>; detail?: string }>("/auth/login", { email, password });
   }
 
-  async register(email: string, password: string, full_name: string, institution: string) {
+  async register(email: string, password: string, name: string, phone_number: string) {
     return this.post<{ access_token: string; user: Record<string, unknown>; detail?: string }>(
       "/auth/register",
-      { email, password, full_name, institution, role: "viewer" }
+      { name, email, password, phone_number }
     );
+  }
+
+  async logout() {
+    return this.post<{ message: string }>("/auth/logout", {});
   }
 
   setAuthToken(token: string) {
@@ -67,124 +81,182 @@ class APIService {
     return !!this.authToken;
   }
 
-  // ── Dashboard ─────────────────────────────────────────────────────────────
+  // ── Admin Stats (was /dashboard) ──────────────────────────────────────────
 
   async getDashboard() {
     return this.get<{
-      active_alerts: number;
-      critical_zones: number;
-      ml_accuracy_pct: number;
-      avg_rainfall_mm: number;
-    }>("/dashboard");
+      total_users: number;
+      total_predictions: number;
+      total_alerts: number;
+      predictions_by_risk_level: Record<string, number>;
+      alerts_by_status: Record<string, number>;
+      total_sensor_readings: number;
+      regions_count: number;
+    }>("/admin/stats");
   }
 
-  // ── Zones ─────────────────────────────────────────────────────────────────
+  // ── Regions (was /zones) ──────────────────────────────────────────────────
 
   async getZones() {
-    return this.get<unknown[]>("/zones");
+    return this.get<unknown[]>("/regions");
   }
 
   async getZoneDetail(zoneId: string) {
-    return this.get<unknown>(`/zones/${zoneId}`);
+    return this.get<unknown>(`/regions/${zoneId}`);
   }
 
-  async getSensorData(zoneId: string) {
-    return this.get<unknown[]>(`/zones/${zoneId}/sensors`);
+  // TODO: no backend endpoint for sensor data per zone
+  async getSensorData(_zoneId: string): Promise<unknown[]> {
+    throw new Error("getSensorData: no backend endpoint — TODO");
   }
 
   // ── Alerts ────────────────────────────────────────────────────────────────
 
   async getAlerts() {
-    return this.get<unknown[]>("/alerts");
-  }
-
-  async getBasinPredictions() {
     return this.get<{
-      predictions: {
-        basin: string;
-        zone: string;
-        risk_level: "low" | "medium" | "high";
-        confidence: number;
-        model_type: string;
-        features: {
-          rainfall_24h: number;
-          water_level: number;
-          humidity: number;
-          soil_saturation: number;
-        };
-      }[];
-      weather_source: string;
-      model_version: string;
-      fetched_at: string;
-    }>("/flood-risk/basin-predictions");
+      id: string;
+      region_id: string;
+      user_id: string;
+      risk_level: string;
+      channel: string;
+      status: string;
+      confidence_score: number | null;
+      message: string;
+      created_at: string;
+      sent_at: string | null;
+    }[]>("/alerts");
   }
 
-  async getNasaRainfall(days: number = 7) {
-    return this.get<{
-      rainfall: { day: string; mm: number }[];
-      source: string;
-      basins?: number;
-      fetched_at?: string;
-      error?: string;
-    }>(`/weather/nasa-rainfall?days=${days}`);
+  async markAlertRead(alertId: string) {
+    return this.patch<{ message: string }>(`/alerts/${alertId}/read`);
   }
 
-  async getWeatherAlerts() {
-    return this.get<{
-      alerts: {
-        id: string;
-        level: string;
-        title: string;
-        description: string;
-        zone: string;
-        time: string;
-        status: string;
-        source: string;
-        rainfall_mm: number;
-        humidity_pct: number;
-        temperature_c: number;
-      }[];
-      source: string;
-      fetched_at: string;
-      basins_checked: number;
-    }>("/weather/live-alerts");
+  // ── Predictions ───────────────────────────────────────────────────────────
+
+  async getPrediction(regionId: string) {
+    return this.post<{
+      zone_id: string;
+      risk_level: string;
+      confidence: number;
+      timestamp: string;
+    }>("/predict", { region_id: regionId });
   }
 
-  async createAlert(alertData: { region_id: string; risk_level: string; message: string; channel?: string }) {
-    return this.post<unknown>("/alerts", alertData);
+  // TODO: /flood-risk/basin-predictions has no backend equivalent — use getPrediction(regionId)
+  async getBasinPredictions(): Promise<never> {
+    throw new Error("getBasinPredictions: no backend endpoint — use getPrediction(regionId) instead");
   }
 
-  // ── Analytics ─────────────────────────────────────────────────────────────
+  // TODO: /weather/nasa-rainfall has no backend equivalent
+  async getNasaRainfall(_days: number = 7): Promise<never> {
+    throw new Error("getNasaRainfall: no backend endpoint — TODO");
+  }
 
-  async getAnalytics(timeRange: "1d" | "7d" | "30d" = "7d") {
-    return this.get<Record<string, unknown>>(`/analytics?range=${timeRange}`);
+  // TODO: /weather/live-alerts has no backend equivalent — use getAlerts()
+  async getWeatherAlerts(): Promise<never> {
+    throw new Error("getWeatherAlerts: no backend endpoint — use getAlerts() instead");
+  }
+
+  // TODO: /analytics has no backend equivalent
+  async getAnalytics(_timeRange: "1d" | "7d" | "30d" = "7d"): Promise<never> {
+    throw new Error("getAnalytics: no backend endpoint — TODO");
   }
 
   // ── Reports ───────────────────────────────────────────────────────────────
 
-  async getReports() {
-    return this.get<unknown[]>("/reports");
+  // TODO: /reports has no backend equivalent
+  async getReports(): Promise<never> {
+    throw new Error("getReports: no backend endpoint — TODO");
   }
 
-  async generateReport(reportData: { type?: string; range?: string }) {
-    return this.post<unknown>("/reports/generate", reportData);
+  // TODO: /reports/generate has no backend equivalent
+  async generateReport(_reportData: { type?: string; range?: string }): Promise<never> {
+    throw new Error("generateReport: no backend endpoint — TODO");
   }
 
-  // ── User ──────────────────────────────────────────────────────────────────
+  // ── User (current) ───────────────────────────────────────────────────────
 
   async getProfile() {
-    return this.get<Record<string, unknown>>("/user/profile");
+    return this.get<{
+      id: string;
+      name: string;
+      email: string;
+      phone_number: string;
+      role: string;
+      email_alerts_enabled: boolean;
+      created_at: string;
+      updated_at: string;
+    }>("/users/me");
   }
 
-  async updateProfile(profileData: { email?: string; email_alerts_enabled?: boolean }) {
-    return this.put<Record<string, unknown>>("/user/profile", profileData);
+  // TODO: no self-update endpoint; PATCH /users/{id} requires admin role
+  async updateProfile(_profileData: { email?: string; email_alerts_enabled?: boolean }): Promise<never> {
+    throw new Error("updateProfile: no self-update endpoint — PATCH /users/{id} is admin-only");
   }
 
-  async changePassword(currentPassword: string, newPassword: string) {
-    return this.put<Record<string, unknown>>("/user/password", {
-      current_password: currentPassword,
-      new_password: newPassword,
-    });
+  // TODO: no password change endpoint on backend
+  async changePassword(_currentPassword: string, _newPassword: string): Promise<never> {
+    throw new Error("changePassword: no backend endpoint — TODO");
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+
+  async getAdminUsers(page = 1, pageSize = 20) {
+    return this.get<{
+      id: string;
+      name: string;
+      email: string;
+      phone_number: string;
+      role: string;
+      email_alerts_enabled: boolean;
+      created_at: string;
+      updated_at: string;
+    }[]>(`/admin/users?page=${page}&page_size=${pageSize}`);
+  }
+
+  async updateUser(
+    userId: string,
+    data: { name?: string; email?: string; phone_number?: string; role?: string; email_alerts_enabled?: boolean }
+  ) {
+    return this.patch<{
+      id: string;
+      name: string;
+      email: string;
+      phone_number: string;
+      role: string;
+      email_alerts_enabled: boolean;
+      created_at: string;
+      updated_at: string;
+    }>(`/users/${userId}`, data);
+  }
+
+  async deleteUser(userId: string) {
+    return this.delete<void>(`/users/${userId}`);
+  }
+
+  async getSubscriptions() {
+    return this.get<{
+      id: string;
+      region_id: string;
+      region_name: string;
+      created_at: string;
+    }[]>("/subscriptions");
+  }
+
+  async getAdminAlerts(status?: string) {
+    const query = status ? `?alert_status=${status}` : "";
+    return this.get<{
+      id: string;
+      region_id: string;
+      user_id: string;
+      risk_level: string;
+      channel: string;
+      status: string;
+      confidence_score: number | null;
+      message: string;
+      created_at: string;
+      sent_at: string | null;
+    }[]>(`/admin/alerts${query}`);
   }
 }
 

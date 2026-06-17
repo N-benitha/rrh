@@ -3,7 +3,7 @@ import DashMap from "../../components/dashboard/DashMap";
 import { BarChart, LineChart } from "../../components/dashboard/Charts";
 import StatCards from "../../components/dashboard/StatCards";
 import AlertsList from "../../components/dashboard/AlertsList";
-import { useDashboardStats, useZones, useAlerts, useAnalytics, usePredictions } from "../../hooks/useData";
+import { useDashboardStats, useZones, useAlerts, useAnalytics, usePredictions, useIsAdmin, useSubscriptions, useRegionDetail } from "../../hooks/useData";
 import { RAINFALL_DATA, RIVER_DATA, ML_HISTORY, LEVEL_COLORS } from "../../constants";
 import type { StatCardItem, Zone } from "../../types";
 import type { Alert } from "../../types";
@@ -21,46 +21,88 @@ type RainfallPoint = { day: string; mm: number };
 type RiverPoint    = { t: string; v: number };
 type MlPoint       = { date: string; acc: number };
 
+const RISK_LABEL: Record<string, string> = {
+  critical: "CRITICAL", high: "HIGH", moderate: "MODERATE", medium: "MEDIUM", low: "LOW",
+};
+
 export default function DashboardOverview() {
   const { data: stats } = useDashboardStats();
   const { zones } = useZones();
   const { alerts } = useAlerts();
   const { data: analytics } = useAnalytics("7d");
   const { data: predictions, loading: predLoading } = usePredictions();
+  const { isAdmin, loading: roleLoading } = useIsAdmin();
+  const { data: subscriptions } = useSubscriptions();
+  const firstRegionId = subscriptions?.[0]?.region_id ?? null;
+  const { data: regionDetail } = useRegionDetail(firstRegionId);
 
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [tableExpandedZoneId, setTableExpandedZoneId] = useState<number | null>(null);
 
-  const statCards: StatCardItem[] = [
+  const adminStatCards: StatCardItem[] = [
     {
       label: "Active Alerts",
-      value: stats ? String(stats.active_alerts) : "—",
-      change: "Real-time count",
+      value: stats ? String(stats.alerts_by_status?.pending ?? stats.total_alerts) : "—",
+      change: "Pending alerts",
       trend: "up",
       type: "alert",
     },
     {
       label: "Critical Zones",
-      value: stats ? String(stats.critical_zones) : "—",
-      change: "Requiring attention",
+      value: stats ? String(stats.predictions_by_risk_level?.critical ?? 0) : "—",
+      change: "Critical predictions",
       trend: "stable",
       type: "zone",
     },
     {
-      label: "ML Accuracy",
-      value: stats ? `${stats.ml_accuracy_pct}%` : "—",
-      change: "Avg confidence score",
+      label: "Total Predictions",
+      value: stats ? String(stats.total_predictions) : "—",
+      change: "ML predictions run",
       trend: "up",
       type: "accuracy",
     },
     {
-      label: "Avg Rainfall 24h",
-      value: stats ? `${stats.avg_rainfall_mm}mm` : "—",
-      change: "Across all zones",
-      trend: "up",
+      label: "Monitored Regions",
+      value: stats ? String(stats.regions_count) : "—",
+      change: "Across Rwanda",
+      trend: "stable",
       type: "rainfall",
     },
   ];
+
+  const pred = regionDetail?.latest_prediction ?? null;
+  const userStatCards: StatCardItem[] = [
+    {
+      label: "Active Alerts",
+      value: String(alerts.length),
+      change: "Your pending alerts",
+      trend: "up",
+      type: "alert",
+    },
+    {
+      label: "My Region Risk",
+      value: pred ? (RISK_LABEL[pred.risk_level.toLowerCase()] ?? pred.risk_level.toUpperCase()) : "—",
+      change: regionDetail?.name ?? (firstRegionId ? "Loading…" : "Subscribe to a region"),
+      trend: "stable",
+      type: "zone",
+    },
+    {
+      label: "Prediction Confidence",
+      value: pred ? `${Math.round(pred.confidence_score * 100)}%` : "—",
+      change: pred ? `Model ${pred.model_version}` : "No prediction yet",
+      trend: "up",
+      type: "accuracy",
+    },
+    {
+      label: "My Subscriptions",
+      value: subscriptions ? String(subscriptions.length) : "—",
+      change: "Subscribed regions",
+      trend: "stable",
+      type: "rainfall",
+    },
+  ];
+
+  const statCards = roleLoading ? [] : isAdmin ? adminStatCards : userStatCards;
 
   const rainfallData: RainfallPoint[] = analytics?.rainfall?.length
     ? analytics.rainfall
@@ -230,22 +272,17 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* ML Basin Predictions */}
+      {/* ML Predictions */}
       <div className="db-panel">
         <div className="db-panel-header">
           <div>
             <h3 className="db-panel-title">🤖 ML Flood Risk Predictions</h3>
             <p className="db-panel-subtitle">
-              Random Forest · {predictions ? predictions.weather_source : "loading…"}
+              Random Forest model · {predLoading ? "running…" : `${predictions?.length ?? 0} regions`}
             </p>
           </div>
-          {predictions && (
-            <span className="db-badge" style={{
-              background: predictions.weather_source === "OpenWeather Live" ? "#14532d" : "#1e3a5f",
-              color: predictions.weather_source === "OpenWeather Live" ? "#6ee7b7" : "#93c5fd",
-            }}>
-              {predictions.weather_source === "OpenWeather Live" ? "● Live" : "● Typical values"}
-            </span>
+          {!predLoading && predictions && predictions.length > 0 && (
+            <span className="db-badge" style={{ background: "#14532d", color: "#6ee7b7" }}>● Live</span>
           )}
         </div>
         <div className="db-panel-body">
@@ -253,15 +290,21 @@ export default function DashboardOverview() {
             <div style={{ color: "rgba(255,255,255,.4)", fontFamily: "var(--mono)", fontSize: 12, padding: "20px 0" }}>
               Running predictions…
             </div>
-          ) : predictions?.predictions?.length ? (
+          ) : predictions && predictions.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-              {predictions.predictions.map((p) => {
-                const riskColor = p.risk_level === "high" ? "#ef4444"
-                  : p.risk_level === "medium" ? "#f97316" : "#22c55e";
-                const riskBg = p.risk_level === "high" ? "#450a0a"
-                  : p.risk_level === "medium" ? "#431407" : "#052e16";
+              {predictions.map((p) => {
+                const rl = p.risk_level.toLowerCase();
+                const riskColor = rl === "critical" ? "#dc2626"
+                  : rl === "high" ? "#ef4444"
+                  : rl === "medium" || rl === "moderate" ? "#f97316"
+                  : "#22c55e";
+                const riskBg = rl === "critical" ? "#450a0a"
+                  : rl === "high" ? "#450a0a"
+                  : rl === "medium" || rl === "moderate" ? "#431407"
+                  : "#052e16";
+                const confidencePct = Math.round(p.confidence * 100);
                 return (
-                  <div key={p.basin} style={{
+                  <div key={p.regionId} style={{
                     background: "rgba(255,255,255,.04)",
                     border: `1px solid ${riskColor}44`,
                     borderRadius: 8,
@@ -269,38 +312,27 @@ export default function DashboardOverview() {
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                       <div style={{ fontFamily: "var(--serif)", fontSize: 13, fontWeight: 600, color: "#fff", lineHeight: 1.3 }}>
-                        {p.basin}
+                        {p.regionName}
                       </div>
                       <span style={{ fontSize: 10, fontFamily: "var(--mono)", padding: "2px 7px",
                         borderRadius: 4, background: riskBg, color: riskColor, flexShrink: 0, marginLeft: 8 }}>
                         {p.risk_level.toUpperCase()}
                       </span>
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.45)", marginBottom: 10 }}>{p.zone}</div>
 
                     {/* Confidence bar */}
-                    <div style={{ marginBottom: 10 }}>
+                    <div style={{ marginBottom: 8 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "rgba(255,255,255,.35)" }}>Confidence</span>
-                        <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: riskColor, fontWeight: 600 }}>{p.confidence}%</span>
+                        <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: riskColor, fontWeight: 600 }}>{confidencePct}%</span>
                       </div>
                       <div style={{ height: 4, background: "rgba(255,255,255,.08)", borderRadius: 2 }}>
-                        <div style={{ height: "100%", width: `${p.confidence}%`, background: riskColor, borderRadius: 2 }} />
+                        <div style={{ height: "100%", width: `${confidencePct}%`, background: riskColor, borderRadius: 2 }} />
                       </div>
                     </div>
 
-                    {/* Key features */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 8px" }}>
-                      {[
-                        ["🌧️", `${p.features.rainfall_24h}mm`, "Rain 24h"],
-                        ["💧", `${p.features.water_level}m`, "Water"],
-                        ["💧", `${p.features.humidity}%`, "Humidity"],
-                        ["🌱", `${p.features.soil_saturation}%`, "Soil"],
-                      ].map(([icon, val, lbl]) => (
-                        <div key={lbl} style={{ fontSize: 10, color: "rgba(255,255,255,.4)" }}>
-                          {icon} <span style={{ color: "rgba(255,255,255,.7)" }}>{val}</span> {lbl}
-                        </div>
-                      ))}
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,.3)", fontFamily: "var(--mono)" }}>
+                      {new Date(p.timestamp).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
                 );
@@ -308,7 +340,7 @@ export default function DashboardOverview() {
             </div>
           ) : (
             <div style={{ color: "rgba(255,255,255,.35)", fontSize: 13 }}>
-              Backend offline — start the server to see live predictions.
+              No predictions available — predictions are generated when sensor data is received.
             </div>
           )}
         </div>
