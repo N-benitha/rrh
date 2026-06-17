@@ -207,7 +207,7 @@ class APIService {
       name: string;
       email: string;
       phone_number: string;
-      role: string;
+      role: "admin" | "user";
       email_alerts_enabled: boolean;
       created_at: string;
       updated_at: string;
