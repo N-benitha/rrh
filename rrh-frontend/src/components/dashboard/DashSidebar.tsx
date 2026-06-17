@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Map,
@@ -34,6 +35,19 @@ const NAV_BOTTOM = [
 ];
 
 export default function DashSidebar({ active, setActive, setPage }: SidebarProps) {
+  const [user, setUser] = useState({ full_name: "Yvette Tuyizere", role: "Admin" });
+
+  useEffect(() => {
+    apiService.validateToken().then((u) => {
+      setUser({
+        full_name: u.full_name || "Yvette Tuyizere",
+        role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase() : "Admin",
+      });
+    }).catch(() => {});
+  }, []);
+
+  const initials = user.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+
   return (
     <div className="db-sidebar">
       <div className="sb-brand">
@@ -82,10 +96,10 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
         ))}
 
         <div className="sb-user" onClick={() => setActive("profile")} style={{ marginTop: "16px", cursor: "pointer" }}>
-          <div className="sb-avatar">YT</div>
+          <div className="sb-avatar">{initials}</div>
           <div>
-            <div className="sb-uname">Yvette Tuyizere</div>
-            <div className="sb-urole">Analyst · Observer</div>
+            <div className="sb-uname">{user.full_name}</div>
+            <div className="sb-urole">{user.role}</div>
           </div>
         </div>
       </div>

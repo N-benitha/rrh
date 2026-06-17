@@ -1,30 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { PageProps } from '../../types';
+import { apiService } from '../../services/api';
 
 export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSignOut = () => {
-    setShowConfirm(true);
-  };
-
   const handleConfirmSignOut = async () => {
     setIsLoading(true);
-    
-    // Simulate logout API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Clear auth data
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userInfo');
-    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    apiService.clearAuth();
     setIsLoading(false);
     setPage('landing');
-  };
-
-  const handleCancel = () => {
-    setShowConfirm(false);
   };
 
   return (
@@ -41,16 +28,8 @@ export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
               <h3>Current Session</h3>
               <div className="so-session-info">
                 <div className="so-info-row">
-                  <span className="so-label">Device</span>
-                  <span className="so-value">Windows - Chrome</span>
-                </div>
-                <div className="so-info-row">
-                  <span className="so-label">Location</span>
-                  <span className="so-value">Kigali, Rwanda</span>
-                </div>
-                <div className="so-info-row">
-                  <span className="so-label">Session Duration</span>
-                  <span className="so-value">2 hours 45 minutes</span>
+                  <span className="so-label">Browser</span>
+                  <span className="so-value">{navigator.userAgent.includes('Chrome') ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : 'Browser'}</span>
                 </div>
                 <div className="so-info-row">
                   <span className="so-label">Last Activity</span>
@@ -60,37 +39,11 @@ export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
             </div>
           </div>
 
-          <div className="so-options">
-            <h3>Sign Out Options</h3>
-
-            <label className="so-option">
-              <input type="radio" name="signout-type" defaultChecked />
-              <div>
-                <strong>Sign Out This Device Only</strong>
-                <p>You'll be signed out on this device, but remain signed in on other devices</p>
-              </div>
-            </label>
-
-            <label className="so-option">
-              <input type="radio" name="signout-type" />
-              <div>
-                <strong>Sign Out From All Devices</strong>
-                <p>You'll be signed out on all devices where you're currently logged in</p>
-              </div>
-            </label>
-          </div>
-
           <div className="so-actions">
-            <button
-              className="so-btn-cancel"
-              onClick={() => setPage('dashboard')}
-            >
+            <button className="so-btn-cancel" onClick={() => setPage('dashboard')}>
               ← Return to Dashboard
             </button>
-            <button
-              className="so-btn-signout"
-              onClick={handleSignOut}
-            >
+            <button className="so-btn-signout" onClick={() => setShowConfirm(true)}>
               🚪 Sign Out
             </button>
           </div>
@@ -101,24 +54,14 @@ export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
             <div className="so-confirm-icon">⚠️</div>
             <h2>Confirm Sign Out</h2>
             <p>Are you sure you want to sign out?</p>
-
             <div className="so-confirm-details">
-              <p>You can sign back in anytime with your email and password. Your data will be safely stored.</p>
+              <p>You can sign back in anytime with your email and password.</p>
             </div>
-
             <div className="so-confirm-actions">
-              <button
-                className="so-btn-keep-signed"
-                onClick={handleCancel}
-                disabled={isLoading}
-              >
+              <button className="so-btn-keep-signed" onClick={() => setShowConfirm(false)} disabled={isLoading}>
                 Keep Me Signed In
               </button>
-              <button
-                className="so-btn-confirm-logout"
-                onClick={handleConfirmSignOut}
-                disabled={isLoading}
-              >
+              <button className="so-btn-confirm-logout" onClick={handleConfirmSignOut} disabled={isLoading}>
                 {isLoading ? 'Signing Out...' : 'Yes, Sign Me Out'}
               </button>
             </div>

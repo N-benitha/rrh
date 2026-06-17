@@ -39,18 +39,19 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
 async def get_dashboard_metrics(db: Session = Depends(get_db)):
     """Get dashboard metrics"""
     try:
+        from app.models.push_notification import PushNotification
+        active_alerts = db.query(PushNotification).count()
+
         metrics = DashboardMetrics(
-            total_sensors=25,
-            active_sensors=22,
-            high_risk_areas=3,
-            medium_risk_areas=5,
-            low_risk_areas=17,
-            active_alerts=4,
+            total_sensors=3,
+            active_sensors=3,
+            high_risk_areas=1,
+            medium_risk_areas=1,
+            low_risk_areas=1,
+            active_alerts=active_alerts,
             last_update=datetime.now()
         )
-        
         return metrics
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get metrics: {str(e)}")
 
@@ -60,49 +61,15 @@ async def get_dashboard_river_basins(db: Session = Depends(get_db)):
     try:
         river_basins = [
             RiverBasinStatus(
-                name="Nyabarongo",
-                current_risk_level="medium",
-                average_water_level=3.2,
-                rainfall_24h=72.0,
-                sensor_count=8,
-                last_update=datetime.now()
-            ),
-            RiverBasinStatus(
                 name="Sebeya",
                 current_risk_level="high",
                 average_water_level=3.9,
                 rainfall_24h=89.0,
-                sensor_count=5,
+                sensor_count=3,
                 last_update=datetime.now()
             ),
-            RiverBasinStatus(
-                name="Akanyaru",
-                current_risk_level="low",
-                average_water_level=2.1,
-                rainfall_24h=45.0,
-                sensor_count=4,
-                last_update=datetime.now()
-            ),
-            RiverBasinStatus(
-                name="Mwogo",
-                current_risk_level="medium",
-                average_water_level=2.8,
-                rainfall_24h=58.0,
-                sensor_count=4,
-                last_update=datetime.now()
-            ),
-            RiverBasinStatus(
-                name="Kagera",
-                current_risk_level="low",
-                average_water_level=2.5,
-                rainfall_24h=52.0,
-                sensor_count=4,
-                last_update=datetime.now()
-            )
         ]
-        
         return river_basins
-        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get river basins: {str(e)}")
 
@@ -231,23 +198,24 @@ async def get_time_series_data(
 ):
     """Get time series data for dashboard charts"""
     try:
-        # Generate mock time series data
+        # Generate stable time series data (seeded so values don't change per refresh)
+        rng = random.Random(42)
         data_points = []
         base_time = datetime.now() - timedelta(hours=hours)
-        
+
         for i in range(hours):
             timestamp = base_time + timedelta(hours=i)
-            
+
             if metric == "water_level":
-                value = 2.5 + random.uniform(-0.8, 1.8)
+                value = 2.5 + rng.uniform(-0.8, 1.8)
             elif metric == "rainfall":
-                value = max(0, 30 + random.uniform(-25, 45))
+                value = max(0, 30 + rng.uniform(-25, 45))
             elif metric == "temperature":
-                value = 22 + random.uniform(-4, 5)
+                value = 22 + rng.uniform(-4, 5)
             elif metric == "risk_score":
-                value = random.uniform(0.2, 0.9)
+                value = rng.uniform(0.2, 0.9)
             else:
-                value = random.uniform(0, 100)
+                value = rng.uniform(0, 100)
             
             data_points.append({
                 "timestamp": timestamp,

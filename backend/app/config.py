@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     SMTP_FROM: str = ""
     SMTP_PASSWORD: str = ""
 
+    # Superadmin seed
+    SUPERADMIN_EMAIL: str = ""
+    SUPERADMIN_PASSWORD: str = ""
+    SUPERADMIN_NAME: str = "Super Admin"
+    SUPERADMIN_PHONE: str = ""
+
     # CORS
     FRONTEND_URL: str = "http://localhost:5173"
 

@@ -6,6 +6,17 @@ from pydantic import BaseModel
 from app.models.prediction import RiskLevel
 
 
+class PredictRequest(BaseModel):
+    region_id: UUID
+
+
+class PredictResponse(BaseModel):
+    zone_id: str
+    risk_level: str
+    confidence: float
+    timestamp: datetime
+
+
 class PredictionResponse(BaseModel):
     id: UUID
     region_id: UUID

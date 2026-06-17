@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import MapView, { Marker, Polyline, Callout, PROVIDER_DEFAULT } from "react-native-maps";
-import { Colors } from "../constants/colors";
 import { apiService } from "../services/api";
 
 const BASE_sensors = [
@@ -56,7 +55,7 @@ export default function MapScreen() {
         return {
           ...base,
           level: lvl,
-          water: z.river ? `${z.river}m` : MOCK_sensors[i].water,
+          water: z.river ? (String(z.river).endsWith('m') ? String(z.river) : `${z.river}m`) : MOCK_sensors[i].water,
           rainfall: z.rainfall ?? MOCK_sensors[i].rainfall,
           note: z.description ?? MOCK_sensors[i].note,
           color,

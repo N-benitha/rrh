@@ -1,6 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/colors";
 import DashboardScreen  from "../screens/DashboardScreen";
 import AlertsScreen     from "../screens/AlertsScreen";
@@ -11,24 +11,32 @@ import ProfileScreen    from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 
-const ICONS: Record<string, string> = {
-  Dashboard:   "📊",
-  Alerts:      "🔔",
-  Weather:     "🌤️",
-  Map:         "🗺️",
-  "Safety Tips": "🛡️",
-  Profile:     "👤",
-};
+type IoniconsName = React.ComponentProps<typeof Ionicons>["name"];
 
-const icon = (label: string, focused: boolean) => (
-  <Text style={{ fontSize: 21, opacity: focused ? 1 : 0.4 }}>{ICONS[label] ?? "●"}</Text>
-);
+const TAB_ICONS: Record<string, { focused: IoniconsName; outline: IoniconsName }> = {
+  Dashboard:     { focused: "bar-chart",        outline: "bar-chart-outline" },
+  Alerts:        { focused: "notifications",     outline: "notifications-outline" },
+  Weather:       { focused: "partly-sunny",      outline: "partly-sunny-outline" },
+  Map:           { focused: "map",               outline: "map-outline" },
+  "Safety Tips": { focused: "shield-checkmark",  outline: "shield-checkmark-outline" },
+  Profile:       { focused: "person-circle",     outline: "person-circle-outline" },
+};
 
 export default function TabNavigator({ onLogout }: { onLogout: () => void }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => icon(route.name, focused),
+        tabBarIcon: ({ focused, size }) => {
+          const icons = TAB_ICONS[route.name];
+          const name = focused ? icons?.focused : icons?.outline;
+          return (
+            <Ionicons
+              name={name ?? "ellipse-outline"}
+              size={size}
+              color={focused ? Colors.primary : Colors.n400}
+            />
+          );
+        },
         tabBarActiveTintColor:   Colors.primary,
         tabBarInactiveTintColor: Colors.n400,
         tabBarStyle: {

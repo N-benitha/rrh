@@ -1,4 +1,5 @@
-import { useState, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
+import { apiService } from "../../services/api";
 
 type UserStatus = "active" | "pending" | "inactive";
 type RoleName = string;
@@ -32,13 +33,6 @@ const ALL_PERMISSIONS = [
   "Configure Settings",
 ];
 
-const INITIAL_USERS: User[] = [
-  { id: 1, name: "Yvette Tuyizere",     email: "tuyizere@rrh.org",   role: "Admin",        status: "active",   joined: "Mar 1, 2024",  initials: "YT" },
-  { id: 2, name: "Jean Paul Habimana",  email: "jhabimana@rrh.org",  role: "Analyst",      status: "active",   joined: "Jan 15, 2025", initials: "JH" },
-  { id: 3, name: "Marie Uwimana",       email: "muwimana@rrh.org",   role: "Observer",     status: "active",   joined: "Feb 20, 2025", initials: "MU" },
-  { id: 4, name: "Celestin Nzeyimana", email: "cnzeyimana@rrh.org", role: "Zone Manager", status: "active",   joined: "Dec 5, 2024",  initials: "CN" },
-  { id: 5, name: "Alice Mukamana",      email: "amukamana@rrh.org",  role: "Analyst",      status: "pending",  joined: "Apr 10, 2026", initials: "AM" },
-];
 
 const INITIAL_ROLES: Role[] = [
   {
@@ -68,8 +62,23 @@ const STATUS_STYLE: Record<UserStatus, { color: string; bg: string }> = {
 };
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES);
+
+  useEffect(() => {
+    apiService.getUsers().then((data) => {
+      const mapped: User[] = data.map((u: any) => ({
+        id: u.id,
+        name: u.full_name || u.email,
+        email: u.email,
+        role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase() : "Viewer",
+        status: u.is_active ? "active" : "inactive",
+        joined: u.created_at ? new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—",
+        initials: (u.full_name || u.email).split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase(),
+      }));
+      setUsers(mapped);
+    }).catch(() => {});
+  }, []);
   const [search, setSearch] = useState("");
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [viewedUserId, setViewedUserId] = useState<number | null>(null);

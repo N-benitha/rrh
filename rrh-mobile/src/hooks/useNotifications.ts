@@ -28,10 +28,8 @@ async function registerExpoPushToken() {
       projectId ? { projectId } : undefined,
     );
     await apiService.registerPushToken(tokenData.data);
-    console.log("[RRH] Push token registered:", tokenData.data);
-  } catch (err) {
-    // Fails on simulators or when projectId is not set — safe to ignore in dev
-    console.log("[RRH] Push token registration skipped:", err);
+  } catch {
+    // Fails on simulators or when projectId is not set — safe to ignore
   }
 }
 

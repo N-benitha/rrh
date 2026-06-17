@@ -6,8 +6,11 @@ from typing import Optional
 from pydantic import BaseModel
 import random
 import smtplib
+import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+logger = logging.getLogger(__name__)
 
 from app.models.schemas import User, UserCreate, Token, UserRole
 from app.models.database import get_db
@@ -44,7 +47,7 @@ _verified: set[str] = set()
 def _send_verification_email(to_email: str, code: str) -> bool:
     """Send OTP via SMTP. Returns True if sent, False if SMTP not configured."""
     if not (settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD):
-        print(f"\n[RRH EMAIL] Verification code for {to_email}: {code}\n")
+        logger.warning("SMTP not configured — OTP for %s generated but not sent", to_email)
         return False
 
     msg = MIMEMultipart("alternative")
@@ -85,11 +88,10 @@ def _send_verification_email(to_email: str, code: str) -> bool:
                 server.ehlo()
                 server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
                 server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
-        print(f"[RRH EMAIL] Sent verification code to {to_email}")
+        logger.info("Verification email sent to %s", to_email)
         return True
     except Exception as e:
-        print(f"[RRH EMAIL] SMTP error: {e}")
-        print(f"[RRH EMAIL] Fallback — code for {to_email}: {code}")
+        logger.error("SMTP error sending to %s: %s", to_email, e)
         return False
 
 # Seed accounts — always available regardless of DB state
@@ -417,26 +419,32 @@ async def change_password(
         # Verify token
         payload = verify_token(credentials.credentials)
         
-        # Find user
+        # Find user — check both MOCK_USERS and DB
         email = payload.get("sub")
-        user = MOCK_USERS.get(email)
-        
+        user = _find_user(email, db)
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-        
+
         # Verify current password
         if not verify_password(current_password, user["hashed_password"]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Current password is incorrect"
             )
-        
-        # Update password (in production, save to database)
-        user["hashed_password"] = get_password_hash(new_password)
-        
+
+        # Update in DB
+        db_user = db.query(UserEntity).filter(UserEntity.email == email).first()
+        if db_user:
+            db_user.hashed_password = get_password_hash(new_password)
+            db.commit()
+        # Also update in-memory mock if present
+        if email in MOCK_USERS:
+            MOCK_USERS[email]["hashed_password"] = get_password_hash(new_password)
+
         return {
             "message": "Password changed successfully",
             "timestamp": datetime.now()
@@ -466,19 +474,25 @@ async def get_users(
                 detail="Admin access required"
             )
         
-        # Return all users (without passwords)
+        # Return all real DB users
+        db_users = db.query(UserEntity).all()
+        seen_emails = set()
         users_list = []
-        for user_data in MOCK_USERS.values():
+        for u in db_users:
+            if u.email in seen_emails:
+                continue
+            seen_emails.add(u.email)
+            role = u.role
             users_list.append({
-                "id": user_data["id"],
-                "email": user_data["email"],
-                "full_name": user_data["full_name"],
-                "institution": user_data["institution"],
-                "role": user_data["role"].value,
-                "is_active": user_data["is_active"],
-                "created_at": user_data["created_at"]
+                "id": u.id,
+                "email": u.email,
+                "full_name": u.full_name or "",
+                "institution": u.institution or "",
+                "role": role.value if hasattr(role, "value") else str(role),
+                "is_active": u.is_active,
+                "created_at": (u.created_at or datetime.now()).isoformat(),
             })
-        
+
         return users_list
         
     except HTTPException:

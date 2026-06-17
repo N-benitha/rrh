@@ -16,81 +16,36 @@ async def get_alerts(
     limit: int = 50,
     db: Session = Depends(get_db)
 ):
-    """Get all alerts with optional filtering"""
+    """Get all alerts from the database"""
     try:
-        # Mock alerts data
+        from app.models.push_notification import PushNotification
+        records = db.query(PushNotification).order_by(PushNotification.sent_at.desc()).limit(limit).all()
+
         alerts = [
             Alert(
-                id=1,
-                title="High Flood Risk - Sebeya River Basin",
-                message="Elevated water levels detected in Ruhengeri area. Immediate monitoring required. Communities in low-lying areas should be prepared for possible evacuation.",
-                severity="high",
-                affected_areas=["Ruhengeri", "Musanze", "Butese"],
-                latitude=-1.5097,
-                longitude=29.6324,
-                radius_km=15.0,
-                status="active",
-                created_at=datetime.now() - timedelta(hours=2),
-                updated_at=datetime.now() - timedelta(hours=1),
-                expires_at=datetime.now() + timedelta(hours=6),
-                sent_via=["email", "push", "sms"]
-            ),
-            Alert(
-                id=2,
-                title="Medium Risk - Nyabarongo River",
-                message="Increased rainfall observed in Kigali region. Continue monitoring and prepare contingency plans.",
-                severity="medium",
-                affected_areas=["Kigali", "Nyarugenge", "Kicukiro"],
-                latitude=-1.9536,
-                longitude=30.0605,
+                id=r.id,
+                title=r.title,
+                message=r.body,
+                severity=r.level if r.level in ("low", "medium", "high", "critical") else "high",
+                affected_areas=["Sebeya River Basin", "Rubavu District"],
+                latitude=-1.7469,
+                longitude=29.2589,
                 radius_km=10.0,
                 status="active",
-                created_at=datetime.now() - timedelta(hours=4),
-                updated_at=datetime.now() - timedelta(hours=2),
-                expires_at=datetime.now() + timedelta(hours=4),
-                sent_via=["email", "push"]
-            ),
-            Alert(
-                id=3,
-                title="Sensor Maintenance - Akanyaru Basin",
-                message="Sensor AKA_001 scheduled for maintenance. Temporary data gaps expected for the next 24 hours.",
-                severity="low",
-                affected_areas=["Nyanza", "Butare"],
-                latitude=-2.3514,
-                longitude=29.6598,
-                radius_km=5.0,
-                status="active",
-                created_at=datetime.now() - timedelta(hours=6),
-                updated_at=datetime.now() - timedelta(hours=6),
-                expires_at=datetime.now() + timedelta(hours=18),
-                sent_via=["email"]
-            ),
-            Alert(
-                id=4,
-                title="Flash Flood Warning - Mwogo River",
-                message="Rapid water level rise detected. Immediate evacuation recommended for riverside communities.",
-                severity="high",
-                affected_areas=["Gitarama", "Ruhango"],
-                latitude=-2.0786,
-                longitude=29.8325,
-                radius_km=8.0,
-                status="resolved",
-                created_at=datetime.now() - timedelta(hours=12),
-                updated_at=datetime.now() - timedelta(hours=8),
-                expires_at=datetime.now() - timedelta(hours=4),
-                sent_via=["email", "push", "sms", "broadcast"]
+                created_at=r.sent_at,
+                updated_at=r.sent_at,
+                expires_at=r.sent_at + timedelta(hours=24),
+                sent_via=["push"]
             )
+            for r in records
         ]
-        
-        # Apply filters
+
         if status:
-            alerts = [alert for alert in alerts if alert.status == status.value]
-        
+            alerts = [a for a in alerts if a.status == status.value]
         if severity:
-            alerts = [alert for alert in alerts if alert.severity == severity.value]
-        
-        return alerts[:limit]
-        
+            alerts = [a for a in alerts if a.severity == severity.value]
+
+        return alerts
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve alerts: {str(e)}")
 

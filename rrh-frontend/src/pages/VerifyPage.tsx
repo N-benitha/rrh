@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AuthSide } from "../components/shared";
 import { apiService } from "../services/api";
 import type { PageProps } from "../types";

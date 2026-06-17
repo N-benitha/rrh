@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -44,7 +45,7 @@ async def _send_expo_push(tokens: list[str], title: str, body: str) -> None:
                 },
             )
     except Exception as exc:
-        print(f"[RRH PUSH] Expo delivery error: {exc}")
+        logging.getLogger(__name__).error("Expo push delivery error: %s", exc)
 
 
 class AlertRequest(BaseModel):

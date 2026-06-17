@@ -25,7 +25,7 @@ export default function ProfilePage({ setPage }: PageProps) {
       setProfile({
         name:        user.full_name || "",
         email:       user.email || "",
-        role:        user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Analyst",
+        role:        user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() : "Analyst",
         institution: user.institution || "Rwanda Resilience Hub",
         joinDate:    fmtDate(user.created_at),
       });
@@ -80,7 +80,7 @@ export default function ProfilePage({ setPage }: PageProps) {
           <div className="prof-avatar-xl">{initials}</div>
           <div className="prof-info">
             <h1 className="prof-name">{profile.name || "—"}</h1>
-            <p className="prof-title">{profile.role} · Observer</p>
+            <p className="prof-title">{profile.role}</p>
             <p className="prof-dept">{profile.institution}</p>
           </div>
         </div>

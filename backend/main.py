@@ -10,6 +10,7 @@ import os
 from app.models.database import engine, Base
 from app.models import push_notification, push_token  # noqa: F401 — registers models with Base
 from app.routers import auth, flood_risk, sensors, alerts, dashboard, weather, notifications
+from app.routers import predict as predict_router, admin as admin_router, users as users_router, subscriptions as sub_router
 from app.core.config import settings
 from app.core.security import verify_token
 
@@ -23,6 +24,8 @@ try:
     import app.models.region      # noqa: F401 — registers Region with PartnerBase
     import app.models.sensor_reading  # noqa: F401
     import app.models.prediction  # noqa: F401
+    import app.models.token_blacklist  # noqa: F401
+    import app.models.user_region_subscription  # noqa: F401
     PartnerBase.metadata.create_all(bind=partner_engine)
 except Exception:
     pass  # Partner models unavailable — continue without them
@@ -31,6 +34,12 @@ except Exception:
 async def lifespan(app: FastAPI):
     # Startup
     print("Rwanda Resilience Hub API starting up...")
+    try:
+        from app.ml.loader import load_models
+        load_models()
+        print("ML models loaded successfully")
+    except Exception as e:
+        print(f"ML models not loaded: {e}")
     yield
     # Shutdown
     print("Rwanda Resilience Hub API shutting down...")
@@ -45,8 +54,8 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -58,7 +67,11 @@ app.include_router(sensors.router, prefix="/api/v1/sensors", tags=["sensors"])
 app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 app.include_router(weather.router, prefix="/api/v1/weather", tags=["weather"])
-app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(notifications.router,   prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(predict_router.router,  prefix="/api/v1", tags=["predict"])
+app.include_router(admin_router.router,    prefix="/api/v1", tags=["admin"])
+app.include_router(users_router.router,    prefix="/api/v1", tags=["users"])
+app.include_router(sub_router.router,      prefix="/api/v1", tags=["subscriptions"])
 
 security = HTTPBearer()
 
