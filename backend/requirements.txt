@@ -1,0 +1,35 @@
+# FastAPI + server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Database
+sqlalchemy==2.0.40
+psycopg2-binary==2.9.10
+alembic==1.14.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# Config
+pydantic-settings==2.7.0
+python-dotenv==1.0.0
+email-validator==2.2.0
+
+# ML (Week 2)
+scikit-learn==1.6.1
+pandas==2.2.3
+joblib==1.4.2
+
+# Data ingestion (Week 1-2)
+httpx==0.28.1
+
+# Email alerts (Week 3)
+resend==2.0.0
+
+# html templates
+jinja2==3.1.2
+
+# CORS
+python-multipart==0.0.20
