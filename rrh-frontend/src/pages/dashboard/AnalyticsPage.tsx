@@ -17,9 +17,10 @@ export default function AnalyticsPage() {
     setRainfallLoading(true);
     apiService
       .getNasaRainfall(7)
-      .then((res) => {
-        if (res.rainfall && res.rainfall.length > 0) {
-          setRainfallData(res.rainfall);
+      .then((res: unknown) => {
+        const r = res as { rainfall?: { day: string; mm: number }[] };
+        if (r.rainfall && r.rainfall.length > 0) {
+          setRainfallData(r.rainfall);
           setRainfallSource("NASA POWER");
         }
       })

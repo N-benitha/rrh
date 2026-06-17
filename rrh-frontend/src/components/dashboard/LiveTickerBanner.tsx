@@ -10,15 +10,15 @@ const LEVEL_ICON: Record<string, string> = {
 };
 
 export default function LiveTickerBanner() {
-  const { alerts, source } = useAlerts();
+  const { alerts } = useAlerts();
 
-  const isLive = source !== "mock";
+  const isLive = alerts.length > 0;
 
   let tickerItems: string[];
 
-  if (isLive && alerts.length > 0) {
+  if (isLive) {
     tickerItems = [
-      `● ${source}`,
+      "● LIVE", 
       ...alerts.map(
         (a) =>
           `${LEVEL_ICON[a.level] ?? "⚠️"} ${a.title} · ${a.zone} · ${a.time}`
