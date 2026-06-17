@@ -1,81 +1,75 @@
-import { useState, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
+import { apiService } from "../../services/api";
 
-type UserStatus = "active" | "pending" | "inactive";
-type RoleName = string;
+type RoleName = "admin" | "user";
 
-interface User {
-  id: number;
+interface BackendUser {
+  id: string;
   name: string;
   email: string;
+  phone_number: string;
   role: RoleName;
-  status: UserStatus;
-  joined: string;
-  initials: string;
+  email_alerts_enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Role {
-  id: number;
-  name: string;
+  name: RoleName;
   permissions: string[];
-  users: number;
   color: string;
 }
 
+const ROLES: Role[] = [
+  {
+    name: "admin",
+    color: "#7c3aed",
+    permissions: [
+      "View Dashboard", "View Analytics", "Manage Alerts", "Create Reports",
+      "Export Data", "Manage Zones", "Manage Users", "Configure Settings",
+    ],
+  },
+  {
+    name: "user",
+    color: "#2563eb",
+    permissions: ["View Dashboard", "View Analytics", "Manage Alerts"],
+  },
+];
+
+const ROLE_COLOR: Record<RoleName, string> = { admin: "#7c3aed", user: "#2563eb" };
+
 const ALL_PERMISSIONS = [
-  "View Dashboard",
-  "View Analytics",
-  "Manage Alerts",
-  "Create Reports",
-  "Export Data",
-  "Manage Zones",
-  "Manage Users",
-  "Configure Settings",
+  "View Dashboard", "View Analytics", "Manage Alerts", "Create Reports",
+  "Export Data", "Manage Zones", "Manage Users", "Configure Settings",
 ];
 
-const INITIAL_USERS: User[] = [
-  { id: 1, name: "Yvette Tuyizere",     email: "tuyizere@rrh.org",   role: "Admin",        status: "active",   joined: "Mar 1, 2024",  initials: "YT" },
-  { id: 2, name: "Jean Paul Habimana",  email: "jhabimana@rrh.org",  role: "Analyst",      status: "active",   joined: "Jan 15, 2025", initials: "JH" },
-  { id: 3, name: "Marie Uwimana",       email: "muwimana@rrh.org",   role: "Observer",     status: "active",   joined: "Feb 20, 2025", initials: "MU" },
-  { id: 4, name: "Celestin Nzeyimana", email: "cnzeyimana@rrh.org", role: "Zone Manager", status: "active",   joined: "Dec 5, 2024",  initials: "CN" },
-  { id: 5, name: "Alice Mukamana",      email: "amukamana@rrh.org",  role: "Analyst",      status: "pending",  joined: "Apr 10, 2026", initials: "AM" },
-];
+function getInitials(name: string): string {
+  return name.split(" ").map((n) => n[0] ?? "").join("").toUpperCase().slice(0, 2);
+}
 
-const INITIAL_ROLES: Role[] = [
-  {
-    id: 1, name: "Admin", users: 1, color: "#7c3aed",
-    permissions: ["View Dashboard", "View Analytics", "Manage Alerts", "Create Reports", "Export Data", "Manage Zones", "Manage Users", "Configure Settings"],
-  },
-  {
-    id: 2, name: "Analyst", users: 2, color: "#2563eb",
-    permissions: ["View Dashboard", "View Analytics", "Create Reports", "Export Data", "Manage Alerts"],
-  },
-  {
-    id: 3, name: "Zone Manager", users: 1, color: "#059669",
-    permissions: ["View Dashboard", "Manage Zones", "Manage Alerts", "View Analytics"],
-  },
-  {
-    id: 4, name: "Observer", users: 1, color: "#6b7280",
-    permissions: ["View Dashboard", "View Analytics"],
-  },
-];
-
-const ROLE_COLORS = ["#dc2626", "#ea580c", "#ca8a04", "#16a34a", "#0891b2", "#7c3aed", "#be185d"];
-
-const STATUS_STYLE: Record<UserStatus, { color: string; bg: string }> = {
-  active:   { color: "#059669", bg: "#d1fae5" },
-  pending:  { color: "#d97706", bg: "#fef3c7" },
-  inactive: { color: "#6b7280", bg: "#f3f4f6" },
-};
+function formatJoined(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES);
+  const [users, setUsers] = useState<BackendUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [viewedUserId, setViewedUserId] = useState<number | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [viewedUserId, setViewedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"users" | "roles">("users");
   const [newRole, setNewRole] = useState({ name: "", permissions: [] as string[] });
   const [roleSuccess, setRoleSuccess] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    apiService
+      .getAdminUsers(1, 50)
+      .then((data) => setUsers(data))
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users"))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtered = users.filter(
     (u) =>
@@ -84,28 +78,35 @@ export default function UserManagementPage() {
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
-  const changeRole = (userId: number, roleName: string) => {
-    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: roleName } : u)));
-    setEditingUserId(null);
+  const changeRole = async (userId: string, role: string) => {
+    try {
+      const updated = await apiService.updateUser(userId, { role });
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role as RoleName } : u)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update role");
+    } finally {
+      setEditingUserId(null);
+    }
   };
 
-  const toggleStatus = (userId: number) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u
-      )
-    );
+  const toggleEmailAlerts = async (userId: string, current: boolean) => {
+    try {
+      const updated = await apiService.updateUser(userId, { email_alerts_enabled: !current });
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, email_alerts_enabled: updated.email_alerts_enabled } : u)));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update email alerts");
+    }
   };
 
-  const approveUser = (userId: number) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: "active" } : u))
-    );
-  };
-
-  const removeUser = (userId: number) => {
-    if (!window.confirm("Remove this user?")) return;
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  const removeUser = async (userId: string) => {
+    if (!window.confirm("Permanently remove this user?")) return;
+    try {
+      await apiService.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      if (viewedUserId === userId) setViewedUserId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to remove user");
+    }
   };
 
   const togglePerm = (perm: string) => {
@@ -120,50 +121,36 @@ export default function UserManagementPage() {
   const createRole = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (!newRole.name.trim() || newRole.permissions.length === 0) return;
-    const name = newRole.name.trim();
-    setRoles((prev) => [
-      ...prev,
-      { id: Date.now(), name, permissions: [...newRole.permissions], users: 0, color: ROLE_COLORS[prev.length % ROLE_COLORS.length] },
-    ]);
-    setRoleSuccess(`Role "${name}" created!`);
+    setRoleSuccess(`Role "${newRole.name.trim()}" saved locally — no backend endpoint for custom roles.`);
     setNewRole({ name: "", permissions: [] });
-    setTimeout(() => setRoleSuccess(""), 3000);
+    setTimeout(() => setRoleSuccess(""), 4000);
   };
-
-  const deleteRole = (roleId: number) => {
-    const role = roles.find((r) => r.id === roleId);
-    if (!role || role.users > 0) return;
-    setRoles((prev) => prev.filter((r) => r.id !== roleId));
-  };
-
-  const getRoleColor = (roleName: string) =>
-    roles.find((r) => r.name === roleName)?.color ?? "#6b7280";
 
   return (
     <div className="db-user-mgmt">
       {/* Stats */}
       <div className="um-stats">
         <div className="um-stat-card">
-          <div className="um-stat-val">{users.length}</div>
+          <div className="um-stat-val">{loading ? "…" : users.length}</div>
           <div className="um-stat-lbl">👥 Total Users</div>
         </div>
         <div className="um-stat-card">
-          <div className="um-stat-val" style={{ color: "#059669" }}>
-            {users.filter((u) => u.status === "active").length}
-          </div>
-          <div className="um-stat-lbl">✅ Active</div>
-        </div>
-        <div className="um-stat-card">
-          <div className="um-stat-val" style={{ color: "#d97706" }}>
-            {users.filter((u) => u.status === "pending").length}
-          </div>
-          <div className="um-stat-lbl">⏳ Pending Approval</div>
-        </div>
-        <div className="um-stat-card">
           <div className="um-stat-val" style={{ color: "#7c3aed" }}>
-            {roles.length}
+            {users.filter((u) => u.role === "admin").length}
           </div>
-          <div className="um-stat-lbl">🔑 Roles</div>
+          <div className="um-stat-lbl">🔑 Admins</div>
+        </div>
+        <div className="um-stat-card">
+          <div className="um-stat-val" style={{ color: "#2563eb" }}>
+            {users.filter((u) => u.role === "user").length}
+          </div>
+          <div className="um-stat-lbl">👤 Users</div>
+        </div>
+        <div className="um-stat-card">
+          <div className="um-stat-val" style={{ color: "#059669" }}>
+            {users.filter((u) => u.email_alerts_enabled).length}
+          </div>
+          <div className="um-stat-lbl">📧 Email Alerts On</div>
         </div>
       </div>
 
@@ -190,6 +177,13 @@ export default function UserManagementPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          {error && (
+            <div style={{ padding: "10px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, color: "#dc2626", fontSize: 13, margin: "0 0 12px" }}>
+              ⚠ {error}
+            </div>
+          )}
+
           <div className="um-table-wrap">
             <table className="um-table">
               <thead>
@@ -197,119 +191,143 @@ export default function UserManagementPage() {
                   <th>User</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Status</th>
+                  <th>Email Alerts</th>
                   <th>Joined</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((user) => {
-                  const ss = STATUS_STYLE[user.status];
-                  const rc = getRoleColor(user.role);
-                  const isViewed = viewedUserId === user.id;
-                  const userRole = roles.find((r) => r.name === user.role);
-                  return (
-                    <Fragment key={user.id}>
-                      <tr>
-                        <td>
-                          <div className="um-user-cell">
-                            <div className="um-avatar" style={{ background: rc + "33", color: rc }}>{user.initials}</div>
-                            <span className="um-user-name">{user.name}</span>
-                          </div>
-                        </td>
-                        <td className="um-email">{user.email}</td>
-                        <td>
-                          {editingUserId === user.id ? (
-                            <select
-                              className="um-role-select"
-                              defaultValue={user.role}
-                              autoFocus
-                              onChange={(e) => changeRole(user.id, e.target.value)}
-                              onBlur={() => setEditingUserId(null)}
-                            >
-                              {roles.map((r) => (
-                                <option key={r.id} value={r.name}>{r.name}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="um-role-badge" style={{ background: rc + "20", color: rc }}>
-                              {user.role}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <span className="um-status-chip" style={{ background: ss.bg, color: ss.color }}>
-                            {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="um-joined">{user.joined}</td>
-                        <td>
-                          <div className="um-actions">
-                            <button className="um-btn-sm um-btn-view" onClick={() => setViewedUserId(isViewed ? null : user.id)}>
-                              {isViewed ? "✕ Close" : "👁 View"}
-                            </button>
-                            <button className="um-btn-sm" onClick={() => setEditingUserId(editingUserId === user.id ? null : user.id)}>
-                              Edit Role
-                            </button>
-                            {user.status === "pending" ? (
-                              <button className="um-btn-sm um-btn-approve" onClick={() => approveUser(user.id)}>
-                                Approve
-                              </button>
-                            ) : (
-                              <button className="um-btn-sm" onClick={() => toggleStatus(user.id)}>
-                                {user.status === "active" ? "Deactivate" : "Activate"}
-                              </button>
-                            )}
-                            <button className="um-btn-sm um-btn-danger" onClick={() => removeUser(user.id)}>
-                              Remove
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {isViewed && (
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#9ca3af" }}>
+                      Loading users…
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#9ca3af" }}>
+                      {search ? "No users match your search." : "No users found."}
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((user) => {
+                    const rc = ROLE_COLOR[user.role] ?? "#6b7280";
+                    const isViewed = viewedUserId === user.id;
+                    const userRole = ROLES.find((r) => r.name === user.role);
+                    return (
+                      <Fragment key={user.id}>
                         <tr>
-                          <td colSpan={6} style={{ padding: 0, background: "#f9fafb" }}>
-                            <div className="um-user-detail">
-                              <div className="um-detail-header">
-                                <div className="um-detail-avatar" style={{ background: rc + "22", color: rc }}>{user.initials}</div>
-                                <div>
-                                  <div className="um-detail-name">{user.name}</div>
-                                  <div className="um-detail-email">{user.email}</div>
-                                  <span className="um-role-badge" style={{ background: rc + "20", color: rc, marginTop: 6, display: "inline-block" }}>
-                                    {user.role}
-                                  </span>
-                                </div>
-                                <span className="um-status-chip" style={{ background: ss.bg, color: ss.color, alignSelf: "flex-start" }}>
-                                  {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                                </span>
+                          <td>
+                            <div className="um-user-cell">
+                              <div className="um-avatar" style={{ background: rc + "33", color: rc }}>
+                                {getInitials(user.name)}
                               </div>
-                              <div className="um-detail-body">
-                                <div className="um-detail-section">
-                                  <div className="um-detail-lbl">📅 Member since</div>
-                                  <div className="um-detail-val">{user.joined}</div>
-                                </div>
-                                <div className="um-detail-section">
-                                  <div className="um-detail-lbl">🔑 Role permissions</div>
-                                  <div className="um-detail-perms">
-                                    {userRole?.permissions.map((p) => (
-                                      <span key={p} className="um-perm-chip" style={{ background: rc + "15", color: rc }}>✓ {p}</span>
-                                    )) ?? <span style={{ color: "#9ca3af", fontSize: 12 }}>No permissions found</span>}
-                                  </div>
-                                </div>
-                              </div>
+                              <span className="um-user-name">{user.name}</span>
+                            </div>
+                          </td>
+                          <td className="um-email">{user.email}</td>
+                          <td>
+                            {editingUserId === user.id ? (
+                              <select
+                                className="um-role-select"
+                                defaultValue={user.role}
+                                autoFocus
+                                onChange={(e) => changeRole(user.id, e.target.value)}
+                                onBlur={() => setEditingUserId(null)}
+                              >
+                                {ROLES.map((r) => (
+                                  <option key={r.name} value={r.name}>{r.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="um-role-badge" style={{ background: rc + "20", color: rc }}>
+                                {user.role}
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <span
+                              className="um-status-chip"
+                              style={{
+                                background: user.email_alerts_enabled ? "#d1fae5" : "#f3f4f6",
+                                color: user.email_alerts_enabled ? "#059669" : "#6b7280",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => toggleEmailAlerts(user.id, user.email_alerts_enabled)}
+                              title="Click to toggle"
+                            >
+                              {user.email_alerts_enabled ? "✓ On" : "Off"}
+                            </span>
+                          </td>
+                          <td className="um-joined">{formatJoined(user.created_at)}</td>
+                          <td>
+                            <div className="um-actions">
+                              <button
+                                className="um-btn-sm um-btn-view"
+                                onClick={() => setViewedUserId(isViewed ? null : user.id)}
+                              >
+                                {isViewed ? "✕ Close" : "👁 View"}
+                              </button>
+                              <button
+                                className="um-btn-sm"
+                                onClick={() => setEditingUserId(editingUserId === user.id ? null : user.id)}
+                              >
+                                Edit Role
+                              </button>
+                              <button
+                                className="um-btn-sm um-btn-danger"
+                                onClick={() => removeUser(user.id)}
+                              >
+                                Remove
+                              </button>
                             </div>
                           </td>
                         </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "28px", color: "#9ca3af" }}>
-                      No users match your search.
-                    </td>
-                  </tr>
+                        {isViewed && (
+                          <tr>
+                            <td colSpan={6} style={{ padding: 0, background: "#f9fafb" }}>
+                              <div className="um-user-detail">
+                                <div className="um-detail-header">
+                                  <div className="um-detail-avatar" style={{ background: rc + "22", color: rc }}>
+                                    {getInitials(user.name)}
+                                  </div>
+                                  <div>
+                                    <div className="um-detail-name">{user.name}</div>
+                                    <div className="um-detail-email">{user.email}</div>
+                                    <span className="um-role-badge" style={{ background: rc + "20", color: rc, marginTop: 6, display: "inline-block" }}>
+                                      {user.role}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="um-detail-body">
+                                  <div className="um-detail-section">
+                                    <div className="um-detail-lbl">📅 Member since</div>
+                                    <div className="um-detail-val">{formatJoined(user.created_at)}</div>
+                                  </div>
+                                  <div className="um-detail-section">
+                                    <div className="um-detail-lbl">📞 Phone</div>
+                                    <div className="um-detail-val">{user.phone_number}</div>
+                                  </div>
+                                  <div className="um-detail-section">
+                                    <div className="um-detail-lbl">📧 Email alerts</div>
+                                    <div className="um-detail-val">{user.email_alerts_enabled ? "Enabled" : "Disabled"}</div>
+                                  </div>
+                                  <div className="um-detail-section">
+                                    <div className="um-detail-lbl">🔑 Role permissions</div>
+                                    <div className="um-detail-perms">
+                                      {userRole?.permissions.map((p) => (
+                                        <span key={p} className="um-perm-chip" style={{ background: rc + "15", color: rc }}>✓ {p}</span>
+                                      )) ?? <span style={{ color: "#9ca3af", fontSize: 12 }}>No permissions found</span>}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -320,22 +338,16 @@ export default function UserManagementPage() {
       {/* ── Roles Tab ── */}
       {activeTab === "roles" && (
         <>
-          {/* Existing roles */}
           <div className="um-panel">
-            <h2 className="um-panel-title">🔑 Existing Roles</h2>
+            <h2 className="um-panel-title">🔑 System Roles</h2>
             <div className="um-roles-grid">
-              {roles.map((role) => (
-                <div key={role.id} className="um-role-card" style={{ borderTop: `3px solid ${role.color}` }}>
+              {ROLES.map((role) => (
+                <div key={role.name} className="um-role-card" style={{ borderTop: `3px solid ${role.color}` }}>
                   <div className="um-role-head">
                     <span className="um-role-name">{role.name}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="um-role-users">{role.users} user{role.users !== 1 ? "s" : ""}</span>
-                      {role.users === 0 && (
-                        <button className="um-btn-sm um-btn-danger" style={{ padding: "2px 8px", fontSize: 10 }} onClick={() => deleteRole(role.id)}>
-                          Delete
-                        </button>
-                      )}
-                    </div>
+                    <span className="um-role-users">
+                      {users.filter((u) => u.role === role.name).length} user{users.filter((u) => u.role === role.name).length !== 1 ? "s" : ""}
+                    </span>
                   </div>
                   <div className="um-role-perms">
                     {role.permissions.map((p) => (
@@ -349,10 +361,12 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          {/* Create Role */}
           <div className="um-panel">
-            <h2 className="um-panel-title">✨ Create New Role</h2>
-            {roleSuccess && <div className="um-success-banner">✅ {roleSuccess}</div>}
+            <h2 className="um-panel-title">✨ Create Custom Role</h2>
+            <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>
+              Note: custom roles are local only — the backend supports "admin" and "user" role assignments.
+            </p>
+            {roleSuccess && <div className="um-success-banner">ℹ {roleSuccess}</div>}
             <form className="um-role-form" onSubmit={createRole}>
               <div className="um-form-group">
                 <label>Role Name</label>

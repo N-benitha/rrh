@@ -1,15 +1,26 @@
 import { useState } from "react";
-import { ALERTS } from "../../constants";
+import { useAlerts } from "../../hooks/useData";
 
-type AlertWithId = typeof ALERTS[number] & { id: number };
 type RuleEntry = { condition: string; notify: string; message: string };
 
+const COLORS: Record<string, string> = {
+  critical: "#DC2626",
+  high: "#F97316",
+  moderate: "#EAB308",
+  low: "#059669",
+};
+
+const LABELS: Record<string, string> = {
+  critical: "Critical",
+  high: "High",
+  moderate: "Moderate",
+  low: "Low",
+};
+
 export default function AlertsManagementPage() {
-  const [alerts, setAlerts] = useState<AlertWithId[]>(() =>
-    ALERTS.map((a, i) => ({ ...a, id: i }))
-  );
+  const { alerts, loading, error, markRead } = useAlerts();
   const [filterLevel, setFilterLevel] = useState("all");
-  const [viewedId, setViewedId] = useState<number | null>(null);
+  const [viewedId, setViewedId] = useState<string | null>(null);
   const [ruleForm, setRuleForm] = useState<RuleEntry>({
     condition: "Rainfall > 100mm/day",
     notify: "All Users",
@@ -18,17 +29,11 @@ export default function AlertsManagementPage() {
   const [rules, setRules] = useState<RuleEntry[]>([]);
   const [ruleSuccess, setRuleSuccess] = useState(false);
 
-  const filtered = filterLevel === "all" ? alerts : alerts.filter((a) => a.lvl === filterLevel);
+  const filtered =
+    filterLevel === "all" ? alerts : alerts.filter((a) => a.level === filterLevel);
 
-  const COLORS: Record<string, string> = {
-    crit: "#DC2626", high: "#F97316", mod: "#EAB308", low: "#059669",
-  };
-  const LABELS: Record<string, string> = {
-    crit: "Critical", high: "High", mod: "Moderate", low: "Low",
-  };
-
-  const dismiss = (id: number) => {
-    setAlerts((prev) => prev.filter((a) => a.id !== id));
+  const dismiss = async (id: string) => {
+    await markRead(id);
     if (viewedId === id) setViewedId(null);
   };
 
@@ -46,28 +51,34 @@ export default function AlertsManagementPage() {
       {/* Stats */}
       <div className="am-stats">
         <div className="am-stat-item">
-          <div className="am-stat-val">{alerts.length}</div>
+          <div className="am-stat-val">{loading ? "…" : alerts.length}</div>
           <div className="am-stat-lbl">🔔 Total Alerts</div>
         </div>
         <div className="am-stat-item">
           <div className="am-stat-val" style={{ color: "#DC2626" }}>
-            {alerts.filter((a) => a.lvl === "crit").length}
+            {alerts.filter((a) => a.level === "critical").length}
           </div>
           <div className="am-stat-lbl">🔴 Critical</div>
         </div>
         <div className="am-stat-item">
           <div className="am-stat-val" style={{ color: "#F97316" }}>
-            {alerts.filter((a) => a.lvl === "high").length}
+            {alerts.filter((a) => a.level === "high").length}
           </div>
           <div className="am-stat-lbl">🟠 High</div>
         </div>
         <div className="am-stat-item">
           <div className="am-stat-val" style={{ color: "#EAB308" }}>
-            {alerts.filter((a) => a.lvl === "mod").length}
+            {alerts.filter((a) => a.level === "moderate").length}
           </div>
           <div className="am-stat-lbl">🟡 Moderate</div>
         </div>
       </div>
+
+      {error && (
+        <div style={{ padding: "10px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, color: "#dc2626", fontSize: 13, marginBottom: 16 }}>
+          ⚠ Failed to load alerts: {error}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="am-filters">
@@ -91,7 +102,11 @@ export default function AlertsManagementPage() {
 
       {/* Alerts List */}
       <div className="am-list">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: "24px", textAlign: "center", color: "#999", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+            Loading alerts…
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: "24px", textAlign: "center", color: "#999", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8 }}>
             No alerts at this level.
           </div>
@@ -102,11 +117,11 @@ export default function AlertsManagementPage() {
                 <div className="am-alert-left">
                   <div
                     className="am-alert-indicator"
-                    style={{ background: COLORS[alert.lvl], borderColor: COLORS[alert.lvl] }}
+                    style={{ background: COLORS[alert.level], borderColor: COLORS[alert.level] }}
                   />
                   <div className="am-alert-content">
                     <h3 className="am-alert-title">{alert.title}</h3>
-                    <p className="am-alert-desc">{alert.desc}</p>
+                    <p className="am-alert-desc">{alert.description}</p>
                     <div className="am-alert-meta">
                       <span>🏘️ {alert.zone}</span>
                       <span>⏱️ {alert.time}</span>
@@ -116,13 +131,13 @@ export default function AlertsManagementPage() {
                 <div className="am-alert-actions">
                   <button
                     className="am-btn-small"
-                    onClick={() => setViewedId((prev) => (prev === alert.id ? null : alert.id))}
+                    onClick={() => setViewedId((prev) => (prev === alert.id ? null : alert.id ?? null))}
                   >
                     {viewedId === alert.id ? "Hide" : "View"}
                   </button>
                   <button
                     className="am-btn-small am-btn-dismiss"
-                    onClick={() => dismiss(alert.id)}
+                    onClick={() => alert.id && dismiss(alert.id)}
                   >
                     Dismiss
                   </button>
@@ -132,8 +147,8 @@ export default function AlertsManagementPage() {
                 <div className="am-alert-detail">
                   <div className="am-detail-row">
                     <span className="am-detail-lbl">Level</span>
-                    <span className="am-detail-val" style={{ color: COLORS[alert.lvl], fontWeight: 700 }}>
-                      {LABELS[alert.lvl]}
+                    <span className="am-detail-val" style={{ color: COLORS[alert.level], fontWeight: 700 }}>
+                      {LABELS[alert.level]}
                     </span>
                   </div>
                   <div className="am-detail-row">
@@ -141,12 +156,16 @@ export default function AlertsManagementPage() {
                     <span className="am-detail-val">{alert.zone}</span>
                   </div>
                   <div className="am-detail-row">
+                    <span className="am-detail-lbl">Status</span>
+                    <span className="am-detail-val">{alert.status ?? "—"}</span>
+                  </div>
+                  <div className="am-detail-row">
                     <span className="am-detail-lbl">Reported</span>
                     <span className="am-detail-val">{alert.time}</span>
                   </div>
                   <div className="am-detail-row am-detail-full">
                     <span className="am-detail-lbl">Full Description</span>
-                    <span className="am-detail-val">{alert.desc}</span>
+                    <span className="am-detail-val">{alert.description}</span>
                   </div>
                 </div>
               )}

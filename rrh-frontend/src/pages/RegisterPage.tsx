@@ -45,21 +45,21 @@ export default function RegisterPage({ setPage }: PageProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [location, setLocation] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [err, setErr] = useState("");
 
   const submit = async () => {
-    if (!email || !password || !acceptTerms) {
+    if (!email || !password || !phoneNumber || !acceptTerms) {
       setErr("Please fill in all required fields and accept the terms.");
       return;
     }
     setErr("");
     setLoading(true);
     try {
-      const full_name = `${firstName} ${lastName}`.trim() || email.split("@")[0];
-      const response = await apiService.register(email, password, full_name, location || "Rwanda");
+      const name = `${firstName} ${lastName}`.trim() || email.split("@")[0];
+      const response = await apiService.register(email, password, name, phoneNumber);
       if (response.access_token) {
         apiService.setAuthToken(response.access_token);
         setPage("dashboard");
@@ -110,17 +110,11 @@ export default function RegisterPage({ setPage }: PageProps) {
             </div>
           </div>
           <div className="field">
-            <label className="field-lbl">Location</label>
-            <select className="field-in" value={location} onChange={(e) => setLocation(e.target.value)}>
-              <option value="" disabled>
-                Select province or district
-              </option>
-              {["Kigali City", "Northern Province", "Southern Province", "Eastern Province", "Western Province"].map(
-                (o) => (
-                  <option key={o} value={o}>{o}</option>
-                )
-              )}
-            </select>
+            <label className="field-lbl">Phone number</label>
+            <div className="field-wrap">
+              <span className="field-ico">📞</span>
+              <input className="field-in ico" type="tel" placeholder="+250 7XX XXX XXX" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+            </div>
           </div>
           <div className="field">
             <label className="field-lbl">Password</label>

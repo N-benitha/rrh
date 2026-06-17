@@ -30,17 +30,9 @@ export function useFetch<T>(fetcher: () => Promise<T>, deps: unknown[] = []) {
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 
-export interface UserProfile {
-  id?: string;
-  email?: string;
-  full_name?: string;
-  role?: string;
-  institution?: string;
-}
-
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(apiService.isAuthenticated());
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<Record<string, unknown> | null>(null);
 
   const login = async (email: string, password: string) => {
     const response = await apiService.login(email, password);
@@ -62,10 +54,13 @@ export function useAuth() {
 // ── Dashboard overview data ────────────────────────────────────────────────
 
 export interface DashboardStats {
-  active_alerts: number;
-  critical_zones: number;
-  ml_accuracy_pct: number;
-  avg_rainfall_mm: number;
+  total_users: number;
+  total_predictions: number;
+  total_alerts: number;
+  predictions_by_risk_level: Record<string, number>;
+  alerts_by_status: Record<string, number>;
+  total_sensor_readings: number;
+  regions_count: number;
 }
 
 export function useDashboardStats() {
@@ -127,53 +122,50 @@ export function useAlerts() {
   const [alerts, setAlerts] = useState<AlertItem[]>(_mockAlerts());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<string>("mock");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Try live weather alerts first
-      const weatherRes = await apiService.getWeatherAlerts();
-      if (weatherRes.alerts && weatherRes.alerts.length > 0) {
-        setAlerts(
-          weatherRes.alerts.map((a) => ({
-            id: a.id,
-            level: _LVL_MAP[a.level] ?? "low",
-            title: a.title,
-            description: a.description,
-            zone: a.zone,
-            time: a.time,
-            status: a.status,
-          }))
-        );
-        setSource(weatherRes.source || "OpenWeather Live");
-        return;
-      }
-    } catch {
-      // fall through to backend alerts
-    }
+      const [alertResult, regionResult] = await Promise.allSettled([
+        apiService.getAlerts(),
+        apiService.getZones(),
+      ]);
 
-    try {
-      // Fall back to backend /alerts endpoint
-      const data = await apiService.getAlerts();
+      // Build region_id → name lookup; silently ignored if regions fetch fails
+      const regionMap = new Map<string, string>();
+      if (regionResult.status === "fulfilled" && Array.isArray(regionResult.value)) {
+        for (const r of regionResult.value as { id: string; name: string }[]) {
+          regionMap.set(r.id, r.name);
+        }
+      }
+
+      if (alertResult.status === "rejected") {
+        throw alertResult.reason;
+      }
+
+      const data = alertResult.value;
       if (Array.isArray(data) && data.length > 0) {
+        const titleMap: Record<string, string> = {
+          critical: "Critical Flood Risk Alert",
+          high: "High Flood Risk Alert",
+          moderate: "Moderate Flood Risk Warning",
+          low: "Low Flood Risk Notice",
+        };
         setAlerts(
-          (data as Record<string, unknown>[]).map((a, i) => ({
-            id: String(a.id ?? i),
-            level: _LVL_MAP[String(a.severity ?? a.level ?? "low")] ?? "low",
-            title: a.title as string,
-            description: (a.message ?? a.description ?? "") as string,
-            zone: Array.isArray(a.affected_areas)
-              ? (a.affected_areas as string[])[0]
-              : (a.zone as string) ?? "Rwanda",
-            time: a.created_at
-              ? new Date(a.created_at as string).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : (a.time as string) ?? "",
-            status: (a.status as string) ?? "active",
-          }))
+          data.map((a) => {
+            const level = _LVL_MAP[a.risk_level.toLowerCase()] ?? "low";
+            return {
+              id: a.id,
+              level,
+              title: titleMap[level] ?? "Flood Risk Alert",
+              description: a.message,
+              zone: regionMap.get(a.region_id) ?? a.region_id,
+              time: new Date(a.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              status: a.status,
+            };
+          })
         );
-        setSource("backend");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load alerts");
@@ -184,7 +176,16 @@ export function useAlerts() {
 
   useEffect(() => { load(); }, [load]);
 
-  return { alerts, loading, error, source, refresh: load };
+  const markRead = useCallback(async (alertId: string) => {
+    try {
+      await apiService.markAlertRead(alertId);
+      setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+    } catch {
+      // keep alert visible if API call fails
+    }
+  }, []);
+
+  return { alerts, loading, error, refresh: load, markRead };
 }
 
 // ── Analytics ─────────────────────────────────────────────────────────────
@@ -227,29 +228,94 @@ export function useAnalytics(range: "1d" | "7d" | "30d" = "7d") {
   return { data, loading, error };
 }
 
-// ── ML Basin Predictions ──────────────────────────────────────────────────
+// ── ML Predictions ────────────────────────────────────────────────────────
 
-export interface BasinPrediction {
-  basin: string;
-  zone: string;
-  risk_level: "low" | "medium" | "high";
-  confidence: number;
-  model_type: string;
-  features: {
-    rainfall_24h: number;
-    water_level: number;
-    humidity: number;
-    soil_saturation: number;
-  };
+export interface PredictionResult {
+  regionId: string;
+  regionName: string;
+  risk_level: string;
+  confidence: number; // 0–1 from API
+  timestamp: string;
 }
 
 export function usePredictions() {
-  return useFetch<{
-    predictions: BasinPrediction[];
-    weather_source: string;
+  return useFetch<PredictionResult[]>(async () => {
+    const regions = await apiService.getZones() as { id: string; name: string }[];
+    if (!Array.isArray(regions) || regions.length === 0) return [];
+
+    const results = await Promise.allSettled(
+      regions.map((r) =>
+        apiService.getPrediction(r.id).then((pred) => ({
+          regionId: r.id,
+          regionName: r.name,
+          risk_level: pred.risk_level,
+          confidence: pred.confidence,
+          timestamp: pred.timestamp,
+        }))
+      )
+    );
+
+    return results
+      .filter((r): r is PromiseFulfilledResult<PredictionResult> => r.status === "fulfilled")
+      .map((r) => r.value);
+  });
+}
+
+// ── Auth / role ───────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone_number: string;
+  role: string;
+  email_alerts_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useIsAdmin() {
+  const { data: profile, loading } = useFetch<UserProfile>(() => apiService.getProfile());
+  return { isAdmin: profile?.role === "admin", loading, profile };
+}
+
+// ── Subscriptions ─────────────────────────────────────────────────────────
+
+export interface SubscriptionItem {
+  id: string;
+  region_id: string;
+  region_name: string;
+  created_at: string;
+}
+
+export function useSubscriptions() {
+  return useFetch<SubscriptionItem[]>(() => apiService.getSubscriptions());
+}
+
+// ── Region detail (for non-admin stat cards) ──────────────────────────────
+
+export interface RegionDetail {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  description: string | null;
+  risk_level: string;
+  latest_prediction: {
+    id: string;
+    region_id: string;
+    risk_level: string;
+    confidence_score: number;
     model_version: string;
-    fetched_at: string;
-  }>(() => apiService.getBasinPredictions());
+    predicted_at: string;
+  } | null;
+}
+
+export function useRegionDetail(regionId: string | null) {
+  return useFetch<RegionDetail | null>(
+    () => regionId ? (apiService.getZoneDetail(regionId) as Promise<RegionDetail>) : Promise.resolve(null),
+    [regionId]
+  );
 }
 
 // ── Local storage ──────────────────────────────────────────────────────────
