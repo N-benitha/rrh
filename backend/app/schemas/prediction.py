@@ -26,3 +26,4 @@ class PredictResponse(BaseModel):
     risk_level: str
     confidence: float
     timestamp: datetime
+    soil_moisture_source: str

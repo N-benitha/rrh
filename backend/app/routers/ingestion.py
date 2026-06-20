@@ -96,7 +96,7 @@ def ingest_iot_readings(
     for r in readings:
         db.add(SensorReading(
             region_id=r.region_id,
-            source=DataSource.IOT_SIM,
+            source=DataSource(r.source),
             rainfall_mm=r.rainfall_mm,
             temperature_c=r.temperature_c,
             humidity_pct=r.humidity_pct,

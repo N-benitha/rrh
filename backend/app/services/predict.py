@@ -65,12 +65,13 @@ def run_inference(region_id: UUID, db: Session) -> dict:
         db.query(SensorReading)
         .filter(
             SensorReading.region_id == region_id,
-            SensorReading.source == DataSource.NASA_POWER,
+            SensorReading.source.in_([DataSource.IOT_REAL, DataSource.NASA_POWER]),
             SensorReading.soil_moisture_pct.isnot(None),
         )
         .order_by(desc(SensorReading.recorded_at))
         .first()
     )
+    soil_moisture_source = latest_soil.source.value if latest_soil else "none"
 
     history = (
         db.query(SensorReading)
@@ -147,4 +148,5 @@ def run_inference(region_id: UUID, db: Session) -> dict:
         "risk_level": risk_label,
         "confidence": confidence,
         "timestamp": now,
+        "soil_moisture_source": soil_moisture_source,
     }
