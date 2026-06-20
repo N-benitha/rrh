@@ -9,10 +9,11 @@ class FloodRiskLevel(str, Enum):
     HIGH = "high"
 
 class UserRole(str, Enum):
+    SUPERADMIN = "superadmin"
     ADMIN = "admin"
     ANALYST = "analyst"
-    VIEWER = "viewer"
-    EMERGENCY_MANAGER = "emergency_manager"
+    ZONE_MANAGER = "zone_manager"
+    RESIDENT = "resident"
 
 class AlertStatus(str, Enum):
     ACTIVE = "active"
@@ -30,7 +31,7 @@ class UserBase(BaseModel):
     email: str
     full_name: str = ""
     institution: str = ""
-    role: UserRole = UserRole.VIEWER
+    role: UserRole = UserRole.RESIDENT
     is_active: bool = True
 
 class UserCreate(UserBase):

@@ -48,7 +48,7 @@ const INITIAL_ROLES: Role[] = [
     permissions: ["View Dashboard", "Manage Zones", "Manage Alerts", "View Analytics"],
   },
   {
-    id: 4, name: "Observer", users: 1, color: "#6b7280",
+    id: 4, name: "Resident", users: 1, color: "#6b7280",
     permissions: ["View Dashboard", "View Analytics"],
   },
 ];
@@ -64,8 +64,12 @@ const STATUS_STYLE: Record<UserStatus, { color: string; bg: string }> = {
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES);
+  const [currentUserRole, setCurrentUserRole] = useState<string>("admin");
 
   useEffect(() => {
+    apiService.validateToken().then((u) => {
+      setCurrentUserRole(u.role?.toLowerCase() || "admin");
+    }).catch(() => {});
     apiService.getUsers().then((data) => {
       const mapped: User[] = data.map((u: any) => ({
         id: u.id,
@@ -80,6 +84,11 @@ export default function UserManagementPage() {
     }).catch(() => {});
   }, []);
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const isSuperAdmin = currentUserRole === "superadmin";
+  const [createForm, setCreateForm] = useState({ full_name: "", email: "", password: "", role: "RESIDENT", region: "" });
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [viewedUserId, setViewedUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"users" | "roles">("users");
@@ -93,28 +102,72 @@ export default function UserManagementPage() {
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
-  const changeRole = (userId: number, roleName: string) => {
-    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: roleName } : u)));
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError("");
+    if (!createForm.full_name || !createForm.email || !createForm.password) {
+      setCreateError("Name, email and password are required.");
+      return;
+    }
+    try {
+      const res = await apiService.adminCreateUser(createForm);
+      const role = res.role.charAt(0).toUpperCase() + res.role.slice(1).toLowerCase();
+      const initials = createForm.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+      setUsers((prev) => [...prev, {
+        id: res.id, name: createForm.full_name, email: createForm.email,
+        role, status: "active", joined: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), initials,
+      }]);
+      setCreateSuccess(`Account created for ${createForm.full_name}`);
+      setCreateForm({ full_name: "", email: "", password: "", role: "VIEWER", region: "" });
+      setShowCreate(false);
+      setTimeout(() => setCreateSuccess(""), 4000);
+    } catch (err: any) {
+      setCreateError(err.message || "Failed to create user.");
+    }
+  };
+
+  const changeRole = async (userId: number, roleName: string) => {
+    try {
+      await apiService.updateUserRole(userId, roleName);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: roleName } : u)));
+    } catch {
+      alert("Failed to update role. Please try again.");
+    }
     setEditingUserId(null);
   };
 
-  const toggleStatus = (userId: number) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u
-      )
-    );
+  const toggleStatus = async (userId: number) => {
+    try {
+      const res = await apiService.toggleUserStatus(userId);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, status: res.is_active ? "active" : "inactive" } : u
+        )
+      );
+    } catch {
+      alert("Failed to update status. Please try again.");
+    }
   };
 
-  const approveUser = (userId: number) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: "active" } : u))
-    );
+  const approveUser = async (userId: number) => {
+    try {
+      const res = await apiService.toggleUserStatus(userId);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: res.is_active ? "active" : "inactive" } : u))
+      );
+    } catch {
+      alert("Failed to approve user. Please try again.");
+    }
   };
 
-  const removeUser = (userId: number) => {
+  const removeUser = async (userId: number) => {
     if (!window.confirm("Remove this user?")) return;
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    try {
+      await apiService.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+    } catch {
+      alert("Failed to remove user. Please try again.");
+    }
   };
 
   const togglePerm = (perm: string) => {
@@ -191,14 +244,67 @@ export default function UserManagementPage() {
         <div className="um-panel">
           <div className="um-panel-header">
             <h2 className="um-panel-title">👥 Registered Users</h2>
-            <input
-              className="um-search"
-              type="text"
-              placeholder="Search name, email or role…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <input
+                className="um-search"
+                type="text"
+                placeholder="Search name, email or role…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button className="um-btn-primary" style={{ whiteSpace: "nowrap" }} onClick={() => setShowCreate((v) => !v)}>
+                {showCreate ? "✕ Cancel" : "+ Create User"}
+              </button>
+            </div>
           </div>
+
+          {createSuccess && <div className="um-success-banner">✅ {createSuccess}</div>}
+
+          {showCreate && (
+            <form className="um-role-form" onSubmit={handleCreate} style={{ marginBottom: 20 }}>
+              <h3 style={{ margin: "0 0 14px", fontSize: 15, color: "#1e3a5f" }}>Create New Account</h3>
+              {createError && <div style={{ color: "#dc2626", fontSize: 13, marginBottom: 10 }}>{createError}</div>}
+              <div className="um-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="um-form-group">
+                  <label>Full Name *</label>
+                  <input type="text" placeholder="e.g. Jean Paul" value={createForm.full_name}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, full_name: e.target.value }))} />
+                </div>
+                <div className="um-form-group">
+                  <label>Email *</label>
+                  <input type="email" placeholder="user@example.com" value={createForm.email}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div className="um-form-group">
+                  <label>Password *</label>
+                  <input type="password" placeholder="Minimum 6 characters" value={createForm.password}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))} />
+                </div>
+                <div className="um-form-group">
+                  <label>Role *</label>
+                  <select value={createForm.role} onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}>
+                    <option value="RESIDENT">Resident</option>
+                    {isSuperAdmin && <option value="ANALYST">Analyst</option>}
+                    {isSuperAdmin && <option value="ZONE_MANAGER">Zone Manager</option>}
+                    {isSuperAdmin && <option value="ADMIN">Admin</option>}
+                    {isSuperAdmin && <option value="SUPERADMIN">Super Admin</option>}
+                  </select>
+                </div>
+                <div className="um-form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label>Region *</label>
+                  <select value={createForm.region} onChange={(e) => setCreateForm((f) => ({ ...f, region: e.target.value }))}>
+                    <option value="">— Select region —</option>
+                    <option value="Rutsiro (Upstream — SEBY-US-01)">Rutsiro — Upstream (SEBY-US-01)</option>
+                    <option value="Nyundo (Midstream — SEBY-MS-02)">Nyundo — Midstream (SEBY-MS-02)</option>
+                    <option value="Kanama/Rubavu (Downstream — SEBY-DS-03)">Kanama/Rubavu — Downstream (SEBY-DS-03)</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" className="um-btn-primary" style={{ marginTop: 12 }}>
+                Create Account
+              </button>
+            </form>
+          )}
           <div className="um-table-wrap">
             <table className="um-table">
               <thead>
@@ -236,9 +342,11 @@ export default function UserManagementPage() {
                               onChange={(e) => changeRole(user.id, e.target.value)}
                               onBlur={() => setEditingUserId(null)}
                             >
-                              {roles.map((r) => (
-                                <option key={r.id} value={r.name}>{r.name}</option>
-                              ))}
+                              <option value="Resident">Resident</option>
+                              {isSuperAdmin && <option value="Analyst">Analyst</option>}
+                              {isSuperAdmin && <option value="Zone Manager">Zone Manager</option>}
+                              {isSuperAdmin && <option value="Admin">Admin</option>}
+                              {isSuperAdmin && <option value="Superadmin">Super Admin</option>}
                             </select>
                           ) : (
                             <span className="um-role-badge" style={{ background: rc + "20", color: rc }}>

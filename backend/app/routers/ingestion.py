@@ -1,11 +1,88 @@
-from fastapi import APIRouter, Depends, Query
+from datetime import datetime, timezone
+from typing import Any
+from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.database import get_db
 from app.ingestion.nasa_power import fetch_nasa_power_for_all_regions
 from app.ingestion.openweather import fetch_openweather_for_all_regions
+from app.models.sensor_reading import DataSource, SensorReading
 from app.models.user import User
 from app.services.auth import require_admin
 
 router = APIRouter(prefix="/api/ingestion", tags=["ingestion"])
+
+
+class IoTReading(BaseModel):
+    region_id: UUID
+    rainfall_mm: float | None = None
+    temperature_c: float | None = None
+    humidity_pct: float | None = None
+    wind_speed_ms: float | None = None
+    soil_moisture_pct: float | None = None
+    river_level_m: float | None = None
+    recorded_at: datetime | None = None
+
+
+@router.post("/iot")
+def ingest_iot(
+    readings: list[IoTReading],
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_admin),
+) -> dict[str, Any]:
+    """Accept a batch of IoT simulator readings and persist them."""
+    if not readings:
+        raise HTTPException(status_code=400, detail="Empty batch")
+
+    rows = []
+    for r in readings:
+        row = SensorReading(
+            region_id=r.region_id,
+            source=DataSource.IOT_SIM,
+            rainfall_mm=r.rainfall_mm,
+            temperature_c=r.temperature_c,
+            humidity_pct=r.humidity_pct,
+            wind_speed_ms=r.wind_speed_ms,
+            river_level_m=r.river_level_m,
+            soil_moisture_pct=r.soil_moisture_pct,
+            recorded_at=r.recorded_at or datetime.now(timezone.utc),
+        )
+        db.add(row)
+        rows.append(row)
+
+    db.commit()
+
+    # Run ML prediction for each reading and auto-alert if critical
+    try:
+        from app.ml.loader import get_models
+        import numpy as np
+        from app.models.push_notification import PushNotification
+
+        models = get_models()
+        if models:
+            for r in readings:
+                features = np.array([[
+                    r.rainfall_mm or 0,
+                    r.river_level_m or 0,
+                    r.humidity_pct or 50,
+                    r.soil_moisture_pct or 50,
+                ]])
+                risk = models["rf"].predict(features)[0]
+                if risk in ("critical", "high"):
+                    notif = PushNotification(
+                        title=f"{'🔴' if risk == 'critical' else '🟠'} {risk.upper()} Flood Risk — Sebeya",
+                        body=f"River level {r.river_level_m:.1f}m · Rainfall {r.rainfall_mm:.1f}mm — Sensor alert from IoT",
+                        level=risk,
+                    )
+                    db.add(notif)
+            db.commit()
+    except Exception:
+        pass  # ML unavailable — still save the readings
+
+    return {"inserted": len(rows)}
 
 
 @router.post("/nasa-power")

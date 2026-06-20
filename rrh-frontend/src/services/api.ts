@@ -40,6 +40,23 @@ class APIService {
     return this.handleResponse<T>(r);
   }
 
+  private async patch<T>(path: string, body: unknown): Promise<T> {
+    const r = await fetch(`${API_BASE_URL}${path}`, {
+      method: "PATCH",
+      headers: this.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    return this.handleResponse<T>(r);
+  }
+
+  private async delete<T>(path: string): Promise<T> {
+    const r = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse<T>(r);
+  }
+
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   async login(email: string, password: string) {
@@ -49,7 +66,7 @@ class APIService {
   async register(email: string, password: string, full_name: string, institution: string) {
     return this.post<{ access_token: string; user: Record<string, unknown>; detail?: string }>(
       "/auth/register",
-      { email, password, full_name, institution, role: "viewer" }
+      { email, password, full_name, institution, role: "resident" }
     );
   }
 
@@ -62,6 +79,22 @@ class APIService {
 
   async getUsers() {
     return this.get<{ id: number; email: string; full_name: string; institution: string; role: string; is_active: boolean; created_at: string }[]>("/auth/users");
+  }
+
+  async adminCreateUser(data: { full_name: string; email: string; password: string; role: string; region: string }) {
+    return this.post<{ message: string; id: number; email: string; role: string }>("/auth/users", { ...data, institution: data.region });
+  }
+
+  async updateUserRole(userId: number, role: string) {
+    return this.patch<{ message: string }>(`/auth/users/${userId}/role`, { role });
+  }
+
+  async toggleUserStatus(userId: number) {
+    return this.patch<{ message: string; is_active: boolean }>(`/auth/users/${userId}/status`, {});
+  }
+
+  async deleteUser(userId: number) {
+    return this.delete<{ message: string }>(`/auth/users/${userId}`);
   }
 
   async sendVerification(email: string) {

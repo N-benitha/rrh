@@ -9,7 +9,7 @@ import os
 
 from app.models.database import engine, Base
 from app.models import push_notification, push_token  # noqa: F401 — registers models with Base
-from app.routers import auth, flood_risk, sensors, alerts, dashboard, weather, notifications
+from app.routers import auth, flood_risk, sensors, alerts, dashboard, weather, notifications, ingestion, regions
 from app.routers import predict as predict_router, admin as admin_router, users as users_router, subscriptions as sub_router
 from app.core.config import settings
 from app.core.security import verify_token
@@ -38,8 +38,8 @@ async def lifespan(app: FastAPI):
         from app.ml.loader import load_models
         load_models()
         print("ML models loaded successfully")
-    except Exception as e:
-        print(f"ML models not loaded: {e}")
+    except Exception as exc:
+        print(f"ML models not loaded: {exc}")
     yield
     # Shutdown
     print("Rwanda Resilience Hub API shutting down...")
@@ -72,6 +72,8 @@ app.include_router(predict_router.router,  prefix="/api/v1", tags=["predict"])
 app.include_router(admin_router.router,    prefix="/api/v1", tags=["admin"])
 app.include_router(users_router.router,    prefix="/api/v1", tags=["users"])
 app.include_router(sub_router.router,      prefix="/api/v1", tags=["subscriptions"])
+app.include_router(ingestion.router,       prefix="/api/v1", tags=["ingestion"])
+app.include_router(regions.router,         prefix="/api/v1", tags=["regions"])
 
 security = HTTPBearer()
 

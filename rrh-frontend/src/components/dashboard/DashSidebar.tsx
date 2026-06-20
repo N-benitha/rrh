@@ -21,8 +21,8 @@ interface SidebarProps {
 
 const NAV_ITEMS = [
   { id: "overview",   label: "Overview",    Icon: LayoutDashboard },
-  { id: "map",        label: "Live Map",    Icon: Map,     badge: "5" },
-  { id: "alerts",     label: "Alerts",      Icon: Bell,    badge: "3", badgeRed: true },
+  { id: "map",        label: "Live Map",    Icon: Map,     },
+  { id: "alerts",     label: "Alerts",      Icon: Bell,  },
   { id: "analytics",  label: "Analytics",   Icon: BarChart2 },
   { id: "zones",      label: "Risk Zones",  Icon: MapPin },
   { id: "reports",    label: "Reports",     Icon: FileText },
@@ -63,7 +63,7 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
       </div>
 
       <nav className="sb-nav">
-        {NAV_ITEMS.map(({ id, label, Icon, badge, badgeRed }) => (
+        {NAV_ITEMS.map(({ id, label, Icon }) => (
           <button
             key={id}
             className={`sb-item ${active === id ? "active" : ""}`}
@@ -71,7 +71,6 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
           >
             <Icon size={16} />
             <span>{label}</span>
-            {badge && <span className={`sb-badge ${badgeRed ? "red" : ""}`}>{badge}</span>}
           </button>
         ))}
       </nav>

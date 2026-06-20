@@ -502,3 +502,109 @@ async def get_users(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get users: {str(e)}"
         )
+
+
+class CreateUserRequest(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    role: str
+    institution: str = ""
+
+
+@router.post("/users")
+async def admin_create_user(
+    body: CreateUserRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    payload = verify_token(credentials.credentials)
+    if payload.get("role") != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    if db.query(UserEntity).filter(UserEntity.email == body.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    try:
+        role = UserRole(body.role.upper())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
+
+    new_user = UserEntity(
+        email=body.email,
+        full_name=body.full_name,
+        institution=body.institution,
+        hashed_password=get_password_hash(body.password),
+        role=role,
+        is_active=True,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User created", "id": new_user.id, "email": new_user.email, "role": role.value}
+
+
+class UpdateRoleRequest(BaseModel):
+    role: str
+
+
+@router.patch("/users/{user_id}/role")
+async def update_user_role(
+    user_id: int,
+    body: UpdateRoleRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    payload = verify_token(credentials.credentials)
+    if payload.get("role") != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = db.query(UserEntity).filter(UserEntity.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        user.role = UserRole(body.role.upper())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
+
+    db.commit()
+    return {"message": "Role updated", "user_id": user_id, "role": user.role.value}
+
+
+@router.patch("/users/{user_id}/status")
+async def toggle_user_status(
+    user_id: int,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    payload = verify_token(credentials.credentials)
+    if payload.get("role") != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = db.query(UserEntity).filter(UserEntity.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = not user.is_active
+    db.commit()
+    return {"message": "Status updated", "user_id": user_id, "is_active": user.is_active}
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    payload = verify_token(credentials.credentials)
+    if payload.get("role") != UserRole.ADMIN.value:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = db.query(UserEntity).filter(UserEntity.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted", "user_id": user_id}

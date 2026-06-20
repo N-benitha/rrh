@@ -12,7 +12,7 @@ class User(Base):
     full_name = Column(String, nullable=False)
     institution = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.VIEWER)
+    role = Column(Enum(UserRole), default=UserRole.RESIDENT)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     last_login = Column(DateTime(timezone=True))

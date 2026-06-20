@@ -45,7 +45,7 @@ export default function RegisterPage({ setPage }: PageProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [institution, setInstitution] = useState("");
+  const [region, setRegion] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -60,7 +60,7 @@ export default function RegisterPage({ setPage }: PageProps) {
     setLoading(true);
     try {
       const full_name = `${firstName} ${lastName}`.trim() || email.split("@")[0];
-      const response = await apiService.register(email, password, full_name, institution || "");
+      const response = await apiService.register(email, password, full_name, region || "");
       if (response.access_token) {
         apiService.setAuthToken(response.access_token);
         // Store email for verify page, then send OTP
@@ -114,8 +114,13 @@ export default function RegisterPage({ setPage }: PageProps) {
             </div>
           </div>
           <div className="field">
-            <label className="field-lbl">Institution / Organization <span style={{ fontWeight: 400, textTransform: "none", fontSize: 11, color: "var(--n400)" }}>(optional)</span></label>
-            <input className="field-in" type="text" placeholder="e.g. University of Rwanda" value={institution} onChange={(e) => setInstitution(e.target.value)} />
+            <label className="field-lbl">Region *</label>
+            <select className="field-in" value={region} onChange={(e) => setRegion(e.target.value)}>
+              <option value="">— Select your region —</option>
+              <option value="Rutsiro (Upstream — SEBY-US-01)">Rutsiro — Upstream (SEBY-US-01)</option>
+              <option value="Nyundo (Midstream — SEBY-MS-02)">Nyundo — Midstream (SEBY-MS-02)</option>
+              <option value="Kanama/Rubavu (Downstream — SEBY-DS-03)">Kanama/Rubavu — Downstream (SEBY-DS-03)</option>
+            </select>
           </div>
           <div className="field">
             <label className="field-lbl">Password</label>

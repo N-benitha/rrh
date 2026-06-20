@@ -473,8 +473,8 @@ a{color:inherit;text-decoration:none}
 .um-role-form{display:flex;flex-direction:column;gap:16px}
 .um-form-group{display:flex;flex-direction:column;gap:8px}
 .um-form-group label{font-size:13px;font-weight:600;color:var(--n900)}
-.um-form-group input[type="text"]{padding:10px 12px;border:1px solid var(--n300);border-radius:6px;font-size:14px;outline:none}
-.um-form-group input[type="text"]:focus{border-color:var(--a300);box-shadow:0 0 0 3px rgba(249,115,22,.1)}
+.um-form-group input,.um-form-group select{padding:10px 12px;border:1px solid var(--n300);border-radius:6px;font-size:14px;outline:none;width:100%;box-sizing:border-box;background:#fff;color:var(--n900)}
+.um-form-group input:focus,.um-form-group select:focus{border-color:var(--a300);box-shadow:0 0 0 3px rgba(249,115,22,.1)}
 .um-perm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .um-perm-checkbox{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--n800);cursor:pointer;padding:8px 10px;border:1px solid var(--n200);border-radius:6px;background:#fff;transition:.15s}
 .um-perm-checkbox:hover{border-color:var(--a300);background:#fff7ed}
