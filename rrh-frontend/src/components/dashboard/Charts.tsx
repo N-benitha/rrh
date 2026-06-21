@@ -112,7 +112,7 @@ export function LineChart({ data, color, title, height = 80 }: LineChartProps) {
           <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="#fff" strokeWidth="1.5" />
         ))}
       </svg>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", fontSize: "8px", color: "#999" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", fontSize: "14px", color: "#999" }}>
         {data.map((d, i) => (
           <span key={i}>{d.t}</span>
         ))}

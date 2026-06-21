@@ -27,7 +27,10 @@ def list_regions(
     for region in regions:
         latest_pred = (
             db.query(Prediction)
-            .filter(Prediction.region_id == region.id)
+            .filter(
+                Prediction.region_id == region.id,
+                Prediction.model_version != "synthetic_v1",
+            )
             .order_by(desc(Prediction.predicted_at))
             .first()
         )
@@ -61,7 +64,10 @@ def get_region(
     )
     recent_predictions = (
         db.query(Prediction)
-        .filter(Prediction.region_id == region_id)
+        .filter(
+            Prediction.region_id == region_id,
+            Prediction.model_version != "synthetic_v1",
+        )
         .order_by(desc(Prediction.predicted_at))
         .limit(20)
         .all()

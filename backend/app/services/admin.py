@@ -16,9 +16,13 @@ def get_users_paginated(db: Session, page: int, page_size: int, include_suspende
     return all_users[offset : offset + page_size]
 
 
+_LIVE_PREDICTIONS = Prediction.model_version != "synthetic_v1"
+
+
 def get_stats(db: Session) -> dict:
     risk_counts = (
         db.query(Prediction.risk_level, func.count(Prediction.id))
+        .filter(_LIVE_PREDICTIONS)
         .group_by(Prediction.risk_level)
         .all()
     )
@@ -37,7 +41,7 @@ def get_stats(db: Session) -> dict:
 
     return {
         "total_users": db.query(func.count(Users.id)).scalar(),
-        "total_predictions": db.query(func.count(Prediction.id)).scalar(),
+        "total_predictions": db.query(func.count(Prediction.id)).filter(_LIVE_PREDICTIONS).scalar(),
         "total_alerts": db.query(func.count(Alert.id)).scalar(),
         "predictions_by_risk_level": predictions_by_risk,
         "alerts_by_status": alerts_by_status,
@@ -49,6 +53,7 @@ def get_stats(db: Session) -> dict:
 def get_model_performance(db: Session) -> dict:
     dist_counts = (
         db.query(Prediction.risk_level, func.count(Prediction.id))
+        .filter(_LIVE_PREDICTIONS)
         .group_by(Prediction.risk_level)
         .all()
     )

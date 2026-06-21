@@ -139,6 +139,7 @@ def run_inference(region_id: UUID, db: Session) -> dict:
         predicted_at=now,
     )
     db.add(prediction)
+    region.risk_level = RiskLevel(risk_label)
     db.commit()
 
     trigger_alerts(region_id=region_id, risk_level=RiskLevel(risk_label), confidence_score=confidence, db=db)
