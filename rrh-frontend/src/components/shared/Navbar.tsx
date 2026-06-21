@@ -1,7 +1,9 @@
+import { useNavigate, useLocation } from "react-router";
 
-import type { Page, PageProps } from "../../types";
+export function Navbar() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
-export function Navbar({ setPage, cur }: PageProps & { cur: Page }) {
   const navCSS = `
     .nav{
       position:fixed;top:0;left:0;right:0;z-index:800;
@@ -50,8 +52,7 @@ export function Navbar({ setPage, cur }: PageProps & { cur: Page }) {
       <nav className="nav">
         <div className="nav-inner">
 
-          {/* Logo — far left */}
-          <div className="nav-logo" onClick={() => setPage("landing")}>
+          <div className="nav-logo" onClick={() => navigate("/")}>
             <img src="/logo.png" alt="RRH" className="nav-logo-img" />
             <div>
               <div className="nav-name">Rwanda Resilience Hub</div>
@@ -61,16 +62,23 @@ export function Navbar({ setPage, cur }: PageProps & { cur: Page }) {
 
           <div className="nav-space" />
 
-          {/* All navigation + auth on the right */}
           <div className="nav-right">
-            {([["landing","Home"],["about","About"],["help","Help"]] as [Page,string][]).map(([p, label]) => (
-              <button key={p} className={`nav-lnk${cur === p ? " cur" : ""}`} onClick={() => setPage(p)}>
+            {([
+              ["/",       "Home"],
+              ["/about",  "About"],
+              ["/help",   "Help"],
+            ] as [string, string][]).map(([path, label]) => (
+              <button
+                key={path}
+                className={`nav-lnk${pathname === path ? " cur" : ""}`}
+                onClick={() => navigate(path)}
+              >
                 {label}
               </button>
             ))}
             <div className="nav-div" />
-            <button className="btn-out" onClick={() => setPage("login")}>Sign in</button>
-            <button className="btn-fill" onClick={() => setPage("register")}>Get access</button>
+            <button className="btn-out" onClick={() => navigate("/login")}>Sign in</button>
+            <button className="btn-fill" onClick={() => navigate("/register")}>Get access</button>
           </div>
 
         </div>

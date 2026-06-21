@@ -8,6 +8,8 @@ import re
 from typing import Optional
 from uuid import UUID
 
+from datetime import datetime
+
 from pydantic import EmailStr, Field, field_validator
 
 from app.models.enums import UserRole
@@ -56,4 +58,6 @@ class UserResponse(ResponseBase):
     phone_number: str
     role: UserRole
     email_alerts_enabled: bool
+    is_deleted: bool
+    deleted_at: Optional[datetime] = None
 

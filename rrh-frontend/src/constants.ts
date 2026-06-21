@@ -5,6 +5,7 @@ import type { Zone, RiskLevel } from "./types";
 export const ZONES: Zone[] = [
   {
     id: 1,
+    regionId: '1',
     name: "Nyabugogo Wetland",
     region: "Kigali City",
     lat: -1.9441,
@@ -19,6 +20,7 @@ export const ZONES: Zone[] = [
   },
   {
     id: 2,
+    regionId: '2',
     name: "Sebeya River Basin",
     region: "Rubavu District",
     lat: -1.68,
@@ -33,6 +35,7 @@ export const ZONES: Zone[] = [
   },
   {
     id: 3,
+    regionId: '3',
     name: "Nyabarongo River",
     region: "Central Rwanda",
     lat: -2.15,
@@ -47,6 +50,7 @@ export const ZONES: Zone[] = [
   },
   {
     id: 4,
+    regionId: '4',
     name: "Kigali Urban Zone",
     region: "Gasabo District",
     lat: -1.9706,
@@ -61,6 +65,7 @@ export const ZONES: Zone[] = [
   },
   {
     id: 5,
+    regionId: '5',
     name: "Akagera Wetlands",
     region: "Eastern Province",
     lat: -1.87,
@@ -239,42 +244,4 @@ export const ML_HISTORY = [
   { date: "Sun", acc: 91 },
 ];
 
-/* ── Dashboard alerts ──────────────────────────────────────── */
-export const ALERTS = [
-  {
-    lvl: "crit" as const,
-    title: "Flood warning — Nyabugogo Wetland",
-    desc: "River levels 4.8m — 92% ML confidence. Communities in Kigali wetland area advised to evacuate.",
-    zone: "Kigali City",
-    time: "2 min ago",
-  },
-  {
-    lvl: "high" as const,
-    title: "Watch advisory — Sebeya River Basin",
-    desc: "Sustained rainfall 98mm/day. River approaching flood stage at 3.2m.",
-    zone: "Rubavu District",
-    time: "5 min ago",
-  },
-  {
-    lvl: "high" as const,
-    title: "Elevated risk — Kigali Urban Zone",
-    desc: "Surface runoff elevated. Impermeable urban surfaces increasing risk score to 71%.",
-    zone: "Gasabo",
-    time: "8 min ago",
-  },
-  {
-    lvl: "mod" as const,
-    title: "Monitoring update — Nyabarongo River",
-    desc: "Conditions stable at moderate threshold. ML re-classification scheduled in 15 min.",
-    zone: "Central Rwanda",
-    time: "11 min ago",
-  },
-  {
-    lvl: "low" as const,
-    title: "All-clear — Akagera Wetlands",
-    desc: "Risk score dropped to 18%. Conditions stable. No immediate threat.",
-    zone: "Eastern Province",
-    time: "18 min ago",
-  },
-];
 

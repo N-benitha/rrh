@@ -3,15 +3,24 @@ import { apiService } from "../../services/api";
 
 type RoleName = "admin" | "user";
 
-interface BackendUser {
+interface User {
   id: string;
   name: string;
   email: string;
   phone_number: string;
   role: RoleName;
   email_alerts_enabled: boolean;
+  is_deleted: boolean;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface Subscription {
+  id: string;
+  region_id: string;
+  region_name: string;
+  created_at: string;
 }
 
 interface Role {
@@ -52,12 +61,14 @@ function formatJoined(iso: string): string {
 }
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<BackendUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [viewedUserId, setViewedUserId] = useState<string | null>(null);
+  const [subscriptions, setSubscriptions] = useState<Record<string, Subscription[] | null>>({});
+  const [subsLoading, setSubsLoading] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<"users" | "roles">("users");
   const [newRole, setNewRole] = useState({ name: "", permissions: [] as string[] });
   const [roleSuccess, setRoleSuccess] = useState("");
@@ -65,7 +76,7 @@ export default function UserManagementPage() {
   useEffect(() => {
     setLoading(true);
     apiService
-      .getAdminUsers(1, 50)
+      .getAdminUsers(1, 50, true)
       .then((data) => setUsers(data))
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users"))
       .finally(() => setLoading(false));
@@ -98,14 +109,36 @@ export default function UserManagementPage() {
     }
   };
 
-  const removeUser = async (userId: string) => {
-    if (!window.confirm("Permanently remove this user?")) return;
+  const suspendUser = async (userId: string) => {
+    if (!window.confirm("Suspend this user? They will lose access until unsuspended.")) return;
     try {
       await apiService.deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_deleted: true, deleted_at: new Date().toISOString() } : u));
       if (viewedUserId === userId) setViewedUserId(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to remove user");
+      alert(err instanceof Error ? err.message : "Failed to suspend user");
+    }
+  };
+
+  const unsuspendUser = async (userId: string) => {
+    try {
+      const updated = await apiService.restoreUser(userId);
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_deleted: updated.is_deleted, deleted_at: updated.deleted_at } : u));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to unsuspend user");
+    }
+  };
+
+  const openView = (userId: string) => {
+    const next = viewedUserId === userId ? null : userId;
+    setViewedUserId(next);
+    if (next && !(next in subscriptions) && !subsLoading[next]) {
+      setSubsLoading((prev) => ({ ...prev, [next]: true }));
+      apiService
+        .getUserSubscriptions(next)
+        .then((data) => setSubscriptions((prev) => ({ ...prev, [next]: data })))
+        .catch(() => setSubscriptions((prev) => ({ ...prev, [next]: null })))
+        .finally(() => setSubsLoading((prev) => ({ ...prev, [next]: false })));
     }
   };
 
@@ -214,15 +247,24 @@ export default function UserManagementPage() {
                     const rc = ROLE_COLOR[user.role] ?? "#6b7280";
                     const isViewed = viewedUserId === user.id;
                     const userRole = ROLES.find((r) => r.name === user.role);
+                    const userSubs = subscriptions[user.id];
+
                     return (
                       <Fragment key={user.id}>
-                        <tr>
+                        <tr style={{ opacity: user.is_deleted ? 0.5 : 1 }}>
                           <td>
                             <div className="um-user-cell">
                               <div className="um-avatar" style={{ background: rc + "33", color: rc }}>
                                 {getInitials(user.name)}
                               </div>
-                              <span className="um-user-name">{user.name}</span>
+                              <div>
+                                <span className="um-user-name">{user.name}</span>
+                                {user.is_deleted && (
+                                  <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 5px", borderRadius: 3, background: "#fee2e2", color: "#dc2626", fontWeight: 600 }}>
+                                    Suspended
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="um-email">{user.email}</td>
@@ -251,10 +293,10 @@ export default function UserManagementPage() {
                               style={{
                                 background: user.email_alerts_enabled ? "#d1fae5" : "#f3f4f6",
                                 color: user.email_alerts_enabled ? "#059669" : "#6b7280",
-                                cursor: "pointer",
+                                cursor: user.is_deleted ? "default" : "pointer",
                               }}
-                              onClick={() => toggleEmailAlerts(user.id, user.email_alerts_enabled)}
-                              title="Click to toggle"
+                              onClick={() => !user.is_deleted && toggleEmailAlerts(user.id, user.email_alerts_enabled)}
+                              title={user.is_deleted ? "User is suspended" : "Click to toggle"}
                             >
                               {user.email_alerts_enabled ? "✓ On" : "Off"}
                             </span>
@@ -264,22 +306,34 @@ export default function UserManagementPage() {
                             <div className="um-actions">
                               <button
                                 className="um-btn-sm um-btn-view"
-                                onClick={() => setViewedUserId(isViewed ? null : user.id)}
+                                onClick={() => openView(user.id)}
                               >
                                 {isViewed ? "✕ Close" : "👁 View"}
                               </button>
-                              <button
-                                className="um-btn-sm"
-                                onClick={() => setEditingUserId(editingUserId === user.id ? null : user.id)}
-                              >
-                                Edit Role
-                              </button>
-                              <button
-                                className="um-btn-sm um-btn-danger"
-                                onClick={() => removeUser(user.id)}
-                              >
-                                Remove
-                              </button>
+                              {!user.is_deleted && (
+                                <button
+                                  className="um-btn-sm"
+                                  onClick={() => setEditingUserId(editingUserId === user.id ? null : user.id)}
+                                >
+                                  Edit Role
+                                </button>
+                              )}
+                              {user.is_deleted ? (
+                                <button
+                                  className="um-btn-sm"
+                                  style={{ borderColor: "#059669", color: "#059669" }}
+                                  onClick={() => unsuspendUser(user.id)}
+                                >
+                                  Unsuspend
+                                </button>
+                              ) : (
+                                <button
+                                  className="um-btn-sm um-btn-danger"
+                                  onClick={() => suspendUser(user.id)}
+                                >
+                                  Suspend
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -297,6 +351,11 @@ export default function UserManagementPage() {
                                     <span className="um-role-badge" style={{ background: rc + "20", color: rc, marginTop: 6, display: "inline-block" }}>
                                       {user.role}
                                     </span>
+                                    {user.is_deleted && (
+                                      <span style={{ marginLeft: 6, fontSize: 10, padding: "2px 6px", borderRadius: 3, background: "#fee2e2", color: "#dc2626", fontWeight: 600, verticalAlign: "middle" }}>
+                                        Suspended {user.deleted_at ? `· ${formatJoined(user.deleted_at)}` : ""}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="um-detail-body">
@@ -319,6 +378,22 @@ export default function UserManagementPage() {
                                         <span key={p} className="um-perm-chip" style={{ background: rc + "15", color: rc }}>✓ {p}</span>
                                       )) ?? <span style={{ color: "#9ca3af", fontSize: 12 }}>No permissions found</span>}
                                     </div>
+                                  </div>
+                                  <div className="um-detail-section">
+                                    <div className="um-detail-lbl">📍 Subscribed regions</div>
+                                    {subsLoading[user.id] ? (
+                                      <div className="um-detail-val" style={{ color: "#9ca3af" }}>Loading…</div>
+                                    ) : userSubs && userSubs.length > 0 ? (
+                                      <div className="um-detail-perms">
+                                        {userSubs.map((s) => (
+                                          <span key={s.id} className="um-perm-chip" style={{ background: "#eff6ff", color: "#2563eb" }}>
+                                            📍 {s.region_name}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="um-detail-val" style={{ color: "#9ca3af" }}>No region subscriptions</div>
+                                    )}
                                   </div>
                                 </div>
                               </div>

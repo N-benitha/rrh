@@ -1,5 +1,5 @@
+import { useNavigate } from "react-router";
 import { Footer } from "../components/shared";
-import type { PageProps } from "../types";
 
 const CSS = `
   .inner-top{padding:96px 40px 44px;background:var(--s900);border-bottom:1px solid var(--s700)}
@@ -48,7 +48,8 @@ const CSS = `
   @media(max-width:680px){.inner-top{padding:72px 18px 32px}.sec{padding:48px 18px}.feat-grid{grid-template-columns:1fr}.stat-strip{grid-template-columns:1fr 1fr}}
 `;
 
-export default function AboutPage({ setPage }: PageProps) {
+export default function AboutPage() {
+  const navigate = useNavigate();
   return (
     <div className="page">
       <style>{CSS}</style>
@@ -168,7 +169,7 @@ export default function AboutPage({ setPage }: PageProps) {
                   <span className="meta-v" style={{ color: "var(--n500)", fontSize: 11.5 }}>{region}</span>
                 </div>
               ))}
-              <button className="btn-hero" onClick={() => setPage("register")}>
+              <button className="btn-hero" onClick={() => navigate("/register")}>
                 Get platform access →
               </button>
             </div>

@@ -20,6 +20,7 @@ export type RiskLevel = "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
 /* ── Zone interface ───────────────── */
 export interface Zone {
   id: number;
+  regionId: string;
   name: string;
   region: string;
   lat: number;
@@ -43,9 +44,15 @@ export interface StatCardItem {
 }
 
 export interface Alert {
-  level: "critical" | "high" | "moderate" | "low";
-  title: string;
-  description: string;
-  zone: string;
-  time: string;
+  id: string;
+  region_id: string;
+  user_id: string;
+  risk_level: string;
+  channel: string;
+  status: string;
+  confidence_score: number | null;
+  message: string;
+  created_at: string;
+  sent_at: string | null;
+  region_name?: string;
 }

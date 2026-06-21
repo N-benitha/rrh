@@ -12,6 +12,7 @@ class DataSource(str, enum.Enum):
     NASA_POWER = "nasa_power"
     OPENWEATHER = "openweather"
     IOT_SIM = "iot_sim"
+    IOT_REAL = "iot_real"
     GOVERNMENT = "government"
 
 

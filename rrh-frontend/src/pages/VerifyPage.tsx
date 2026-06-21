@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { AuthSide } from "../components/shared";
-import type { PageProps } from "../types";
 
 const CSS = `
   .auth-wrap{min-height:100vh;display:grid;grid-template-columns:45fr 55fr;background:var(--s900)}
@@ -43,7 +43,8 @@ const CSS = `
   @media(max-width:680px){.auth-form-area{padding:24px 18px}}
 `;
 
-export default function VerifyPage({ setPage }: PageProps) {
+export default function VerifyPage() {
+  const navigate = useNavigate();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [secs, setSecs] = useState(300);
   const [loading, setLoading] = useState(false);
@@ -163,7 +164,7 @@ export default function VerifyPage({ setPage }: PageProps) {
               <div className="msg msg-ok">
                 ✓ You now have access to live flood risk data and alerts.
               </div>
-              <button className="btn-sub" onClick={() => setPage("dashboard")}>
+              <button className="btn-sub" onClick={() => navigate("/dashboard")}>
                 Go to dashboard →
               </button>
             </>

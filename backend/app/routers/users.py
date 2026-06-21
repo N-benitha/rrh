@@ -51,3 +51,12 @@ def delete_user(
     _admin: Users = Depends(require_admin),
 ):
     user_service.soft_delete(db, user_id)
+
+
+@router.patch("/{user_id}/restore", response_model=UserResponse)
+def restore_user(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    _admin: Users = Depends(require_admin),
+):
+    return UserResponse.model_validate(user_service.restore(db, user_id))

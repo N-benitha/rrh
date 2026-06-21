@@ -201,7 +201,9 @@ class APIService {
 
   // ── Admin ─────────────────────────────────────────────────────────────────
 
-  async getAdminUsers(page = 1, pageSize = 20) {
+  async getAdminUsers(page = 1, pageSize = 20, includeSuspended = false) {
+    const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+    if (includeSuspended) params.set("include_suspended", "true");
     return this.get<{
       id: string;
       name: string;
@@ -209,9 +211,35 @@ class APIService {
       phone_number: string;
       role: "admin" | "user";
       email_alerts_enabled: boolean;
+      is_deleted: boolean;
+      deleted_at: string | null;
       created_at: string;
       updated_at: string;
-    }[]>(`/admin/users?page=${page}&page_size=${pageSize}`);
+    }[]>(`/admin/users?${params}`);
+  }
+
+  async restoreUser(userId: string) {
+    return this.patch<{
+      id: string;
+      name: string;
+      email: string;
+      phone_number: string;
+      role: string;
+      email_alerts_enabled: boolean;
+      is_deleted: boolean;
+      deleted_at: string | null;
+      created_at: string;
+      updated_at: string;
+    }>(`/users/${userId}/restore`);
+  }
+
+  async getUserSubscriptions(userId: string) {
+    return this.get<{
+      id: string;
+      region_id: string;
+      region_name: string;
+      created_at: string;
+    }[]>(`/admin/users/${userId}/subscriptions`);
   }
 
   async updateUser(
@@ -232,6 +260,56 @@ class APIService {
 
   async deleteUser(userId: string) {
     return this.delete<void>(`/users/${userId}`);
+  }
+
+  async getRegionSensorReadings(
+    regionId: string,
+    source?: string,
+    limit = 7,
+  ) {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (source) params.set("source", source);
+    return this.get<{
+      id: string;
+      region_id: string;
+      source: string;
+      rainfall_mm: number | null;
+      temperature_c: number | null;
+      humidity_pct: number | null;
+      wind_speed_ms: number | null;
+      river_level_m: number | null;
+      soil_moisture_pct: number | null;
+      recorded_at: string;
+    }[]>(`/regions/${regionId}/sensor-readings?${params}`);
+  }
+
+  async getRegionSensorReadingLatest(regionId: string, source?: string) {
+    const params = source ? `?source=${source}` : "";
+    return this.get<{
+      id: string;
+      region_id: string;
+      source: string;
+      rainfall_mm: number | null;
+      temperature_c: number | null;
+      humidity_pct: number | null;
+      wind_speed_ms: number | null;
+      river_level_m: number | null;
+      soil_moisture_pct: number | null;
+      recorded_at: string;
+    } | null>(`/regions/${regionId}/sensor-readings/latest${params}`);
+  }
+
+  async subscribe(regionId: string) {
+    return this.post<{
+      id: string;
+      region_id: string;
+      region_name: string;
+      created_at: string;
+    }>("/subscriptions", { region_id: regionId });
+  }
+
+  async unsubscribe(regionId: string) {
+    return this.delete<void>(`/subscriptions/${regionId}`);
   }
 
   async getSubscriptions() {

@@ -1,24 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { ZONES, RISK_META } from "../../constants";
 import type { Zone } from "../../types";
-
-interface LeafletLayer {
-  addTo: (map: LeafletMap) => this;
-  on: (event: string, cb: () => void) => this;
-}
-interface LeafletMap {
-  remove: () => void;
-  removeLayer: (layer: LeafletLayer) => void;
-}
-interface LeafletStatic {
-  map: (el: HTMLDivElement, opts: object) => LeafletMap;
-  tileLayer: (url: string, opts: object) => LeafletLayer;
-  control: { zoom: (opts: object) => LeafletLayer };
-  circle: (latlng: [number, number], opts: object) => LeafletLayer;
-  divIcon: (opts: object) => LeafletLayer;
-  marker: (latlng: [number, number], opts: object) => LeafletLayer;
-}
-type WindowWithLeaflet = Window & typeof globalThis & { L?: LeafletStatic };
 
 const TREND_ICON: Record<string, string> = { up: "▲", dn: "▼", st: "●" };
 const TREND_COLOR: Record<string, string> = { up: "#ef4444", dn: "#22c55e", st: "#f59e0b" };
@@ -119,8 +103,8 @@ interface DashMapProps {
 
 export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const markersRef = useRef<LeafletLayer[]>([]);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.Layer[]>([]);
   const [internalSel, setInternalSel] = useState<Zone | null>(null);
   const [filter, setFilter] = useState<string>("ALL");
 
@@ -139,7 +123,7 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
     ? displayZones
     : displayZones.filter((z) => z.level === filter);
 
-  const renderMarkers = useCallback((L: LeafletStatic, map: LeafletMap, zonesToShow: Zone[]) => {
+  const renderMarkers = useCallback((map: L.Map, zonesToShow: Zone[]) => {
     markersRef.current.forEach((m) => map.removeLayer(m));
     markersRef.current = [];
 
@@ -189,57 +173,34 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
   useEffect(() => {
     if (!ref.current || mapRef.current) return;
 
-    if (!document.querySelector("#lfcss-db")) {
-      const l = document.createElement("link");
-      l.id = "lfcss-db";
-      l.rel = "stylesheet";
-      l.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
-      document.head.appendChild(l);
-    }
+    const map = L.map(ref.current, {
+      center: [-1.95, 30.05],
+      zoom: 8,
+      zoomControl: false,
+      attributionControl: false,
+    });
 
-    const init = () => {
-      const L = (window as WindowWithLeaflet).L;
-      if (!L || !ref.current) return;
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
+      maxZoom: 19,
+    }).addTo(map);
 
-      const map = L.map(ref.current, {
-        center: [-1.95, 30.05],
-        zoom: 8,
-        zoomControl: false,
-        attributionControl: false,
-      });
+    L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        subdomains: "abcd",
-        maxZoom: 19,
-      }).addTo(map);
-
-      L.control.zoom({ position: "bottomright" }).addTo(map);
-
-      mapRef.current = map;
-      renderMarkers(L, map, displayZones);
-    };
-
-    if ((window as WindowWithLeaflet).L) {
-      init();
-    } else {
-      const s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-      s.onload = init;
-      document.head.appendChild(s);
-    }
+    mapRef.current = map;
+    map.invalidateSize();
+    renderMarkers(map, displayZones);
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      map.remove();
+      mapRef.current = null;
     };
-  }, [renderMarkers, displayZones]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const L = (window as WindowWithLeaflet).L;
-    if (!L || !mapRef.current) return;
-    renderMarkers(L, mapRef.current, filtered);
+    if (!mapRef.current) return;
+    mapRef.current.invalidateSize();
+    renderMarkers(mapRef.current, filtered);
   }, [filter, renderMarkers, filtered]);
 
   const riverPct = (river: string) => {

@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { AuthSide } from "../components/shared";
 import { apiService } from "../services/api";
-import type { PageProps } from "../types";
 
 const CSS = `
   .auth-wrap{min-height:100vh;padding-top:58px;display:grid;grid-template-columns:45fr 55fr;background:var(--s900)}
@@ -40,7 +40,8 @@ const CSS = `
   @media(max-width:680px){.auth-form-area{padding:24px 18px}}
 `;
 
-export default function RegisterPage({ setPage }: PageProps) {
+export default function RegisterPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -62,7 +63,9 @@ export default function RegisterPage({ setPage }: PageProps) {
       const response = await apiService.register(email, password, name, phoneNumber);
       if (response.access_token) {
         apiService.setAuthToken(response.access_token);
-        setPage("dashboard");
+        setFirstName(""); setLastName(""); setEmail("");
+        setPhoneNumber(""); setPassword(""); setAcceptTerms(false);
+        navigate("/dashboard");
       } else {
         setErr(response.detail || "Registration failed. Please try again.");
       }
@@ -95,36 +98,36 @@ export default function RegisterPage({ setPage }: PageProps) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div className="field">
               <label className="field-lbl">First name</label>
-              <input className="field-in" type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <input className="field-in" type="text" placeholder="First name" value={firstName} onChange={(e) => { setFirstName(e.target.value); setErr(""); }} />
             </div>
             <div className="field">
               <label className="field-lbl">Last name</label>
-              <input className="field-in" type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <input className="field-in" type="text" placeholder="Last name" value={lastName} onChange={(e) => { setLastName(e.target.value); setErr(""); }} />
             </div>
           </div>
           <div className="field">
             <label className="field-lbl">Email address</label>
             <div className="field-wrap">
               <span className="field-ico">✉</span>
-              <input className="field-in ico" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <input className="field-in ico" type="email" placeholder="your@email.com" value={email} onChange={(e) => { setEmail(e.target.value); setErr(""); }} />
             </div>
           </div>
           <div className="field">
             <label className="field-lbl">Phone number</label>
             <div className="field-wrap">
               <span className="field-ico">📞</span>
-              <input className="field-in ico" type="tel" placeholder="+250 7XX XXX XXX" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+              <input className="field-in ico" type="tel" placeholder="+250 7XX XXX XXX" value={phoneNumber} onChange={(e) => { setPhoneNumber(e.target.value); setErr(""); }} />
             </div>
           </div>
           <div className="field">
             <label className="field-lbl">Password</label>
             <div className="field-wrap">
               <span className="field-ico">🔒</span>
-              <input className="field-in ico" type="password" placeholder="Create a strong password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <input className="field-in ico" type="password" placeholder="Create a strong password" value={password} onChange={(e) => { setPassword(e.target.value); setErr(""); }} />
             </div>
           </div>
           <div className="chk-row" style={{ marginBottom: 14 }}>
-            <input type="checkbox" id="terms" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
+            <input type="checkbox" id="terms" checked={acceptTerms} onChange={(e) => { setAcceptTerms(e.target.checked); setErr(""); }} />
             <label htmlFor="terms" style={{ fontFamily: "var(--serif)", fontSize: 12.5, color: "var(--n600)" }}>
               I agree to the <button className="tlink">Terms of Use</button> and{" "}
               <button className="tlink">Privacy Policy</button>
@@ -142,7 +145,7 @@ export default function RegisterPage({ setPage }: PageProps) {
           </button>
           <div className="form-switch">
             Already registered?{" "}
-            <button className="tlink" style={{ fontWeight: 700 }} onClick={() => setPage("login")}>
+            <button className="tlink" style={{ fontWeight: 700 }} onClick={() => navigate("/login")}>
               Sign in
             </button>
           </div>

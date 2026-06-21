@@ -14,6 +14,7 @@ interface LineChartProps {
   color: string;
   unit: string;
   title?: string;
+  height?: number;
 }
 
 export function BarChart({ data }: BarChartProps) {
@@ -36,13 +37,14 @@ export function BarChart({ data }: BarChartProps) {
             </div>
           ))}
         </div>
-        <div className="db-chart-bars" style={{ flex: 1 }}>
+        <div className="db-chart-bars" style={{ flex: 1, alignItems: "stretch" }}>
           {data.map((d, i) => (
-            <div key={i} className="db-bar-col">
+            <div key={i} className="db-bar-col" style={{ justifyContent: "flex-end" }}>
               <div
                 className="db-bar-fill"
                 style={{
                   height: `${(d.mm / max) * 100}%`,
+                  flex: "none",
                   background: getColor(d.mm),
                   opacity: 0.85,
                 }}
@@ -60,11 +62,11 @@ export function BarChart({ data }: BarChartProps) {
         </div>
         <div className="db-cl-item">
           <div className="db-cl-dot" style={{ background: "#F97316" }} />
-          70–100mm high
+          70-100mm high
         </div>
         <div className="db-cl-item">
           <div className="db-cl-dot" style={{ background: "#EAB308" }} />
-          50–70mm moderate
+          50-70mm moderate
         </div>
         <div className="db-cl-item">
           <div className="db-cl-dot" style={{ background: "#34D399" }} />
@@ -75,9 +77,9 @@ export function BarChart({ data }: BarChartProps) {
   );
 }
 
-export function LineChart({ data, color, title }: LineChartProps) {
+export function LineChart({ data, color, title, height = 80 }: LineChartProps) {
   const W = 320;
-  const H = 80;
+  const H = height;
   const pad = 8;
 
   const vals = data.map((d) => d.v);
@@ -110,7 +112,7 @@ export function LineChart({ data, color, title }: LineChartProps) {
           <circle key={i} cx={p.x} cy={p.y} r="3" fill={color} stroke="#fff" strokeWidth="1.5" />
         ))}
       </svg>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", fontSize: "8px", color: "#999" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", fontSize: "14px", color: "#999" }}>
         {data.map((d, i) => (
           <span key={i}>{d.t}</span>
         ))}

@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -23,10 +24,11 @@ class SensorReadingResponse(BaseModel):
 
 class IoTReadingRequest(BaseModel):
     region_id: UUID
+    source: Literal["iot_sim", "iot_real"] = "iot_sim"
     rainfall_mm: float | None = Field(default=None, ge=0)
     temperature_c: float | None = None
     humidity_pct: float | None = Field(default=None, ge=0, le=100)
     wind_speed_ms: float | None = Field(default=None, ge=0)
     soil_moisture_pct: float | None = Field(default=None, ge=0, le=100)
     river_level_m: float | None = Field(default=None, ge=0)
-    recorded_at: datetime
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

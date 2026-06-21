@@ -1,9 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import RRHApp from './pages/RRHApp'
+import { RouterProvider } from 'react-router'
+import { router } from './router'
+import './shared.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RRHApp />
+    <RouterProvider router={router} />
   </React.StrictMode>,
 )

@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { AuthSide } from "../components/shared";
 import { apiService } from "../services/api";
-import type { PageProps } from "../types";
 
 const CSS = `
   .auth-wrap{min-height:100vh;padding-top:58px;display:grid;grid-template-columns:45fr 55fr;background:var(--s900)}
@@ -44,7 +44,8 @@ const CSS = `
   @media(max-width:680px){.auth-form-area{padding:24px 18px}}
 `;
 
-export default function LoginPage({ setPage }: PageProps) {
+export default function LoginPage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -61,7 +62,9 @@ export default function LoginPage({ setPage }: PageProps) {
       const response = await apiService.login(email, pw);
       if (response.access_token) {
         apiService.setAuthToken(response.access_token);
-        setPage("dashboard");
+        setEmail("");
+        setPw("");
+        navigate("/dashboard");
       } else {
         setErr(response.detail || "Login failed. Please try again.");
       }
@@ -99,7 +102,7 @@ export default function LoginPage({ setPage }: PageProps) {
                 type="email"
                 placeholder="your@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setErr(""); }}
               />
             </div>
           </div>
@@ -112,7 +115,7 @@ export default function LoginPage({ setPage }: PageProps) {
                 type="password"
                 placeholder="••••••••"
                 value={pw}
-                onChange={(e) => setPw(e.target.value)}
+                onChange={(e) => { setPw(e.target.value); setErr(""); }}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
               />
             </div>
@@ -122,7 +125,7 @@ export default function LoginPage({ setPage }: PageProps) {
               <input type="checkbox" id="rem" />
               <label htmlFor="rem">Remember me</label>
             </div>
-            <button className="tlink" onClick={() => setPage("forgot")}>
+            <button className="tlink" onClick={() => navigate("/forgot-password")}>
               Forgot password?
             </button>
           </div>
@@ -160,7 +163,7 @@ export default function LoginPage({ setPage }: PageProps) {
           </button>
           <div className="form-switch">
             No account?{" "}
-            <button className="tlink" style={{ fontWeight: 700 }} onClick={() => setPage("register")}>
+            <button className="tlink" style={{ fontWeight: 700 }} onClick={() => navigate("/register")}>
               Get access
             </button>
           </div>
