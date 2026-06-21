@@ -1,4 +1,27 @@
+import dayjs from "dayjs";
 import type { Zone } from "../types";
+
+export const FORMATS = {
+  default: "MMM DD, YYYY h:mm A",
+  dateOnly: "MMM DD, YYYY",
+  timeOnly: "h:mm A",
+  iso: "YYYY-MM-DD",
+  full: "MMMM DD, YYYY h:mm:ss A",
+} as const;
+
+export function formatDateTime(
+  date: Date | string | number | undefined,
+  format: keyof typeof FORMATS | string = "default",
+): string {
+  if (!date) return "";
+  try {
+    const d = dayjs(date);
+    const formatString = format in FORMATS ? FORMATS[format as keyof typeof FORMATS] : format;
+    return d.isValid() ? d.format(formatString) : "";
+  } catch {
+    return "";
+  }
+}
 
 // Color utilities
 export const getRiskColor = (level: string): string => {

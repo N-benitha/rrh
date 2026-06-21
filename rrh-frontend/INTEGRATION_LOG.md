@@ -194,3 +194,129 @@ DashboardOverview.tsx:
     "My Subscriptions"       → subscriptions.length
 - While role is loading: statCards = [] (StatCards renders nothing)
 - If user has no subscriptions: risk/confidence cards show "—" with hint "Subscribe to a region"
+
+---
+
+## Task 7 — Align Alert type with backend + wire alert mini-card to /regions/{id}
+Status: DONE
+Files changed:
+- src/types.ts
+- src/hooks/useData.ts
+- src/components/dashboard/AlertsList.tsx
+- src/pages/dashboard/AlertsManagementPage.tsx
+- src/pages/dashboard/DashboardOverview.tsx
+- src/constants.ts
+
+### Alert type alignment
+- `Alert` in types.ts rewritten to match backend shape exactly:
+    { id, region_id, user_id, risk_level, channel, status, confidence_score, message, created_at, sent_at, region_name? }
+- `region_name` is the only frontend-enriched field (populated from the parallel /regions fetch in useAlerts)
+- Removed `AlertItem` interface, `_LVL_MAP`, `_mockAlerts()` from useData.ts — translation layer eliminated
+- `useAlerts()` now starts with `[]` (no mock seed); maps backend rows directly, enriches region_name only
+- `ALERTS` constant removed from constants.ts — no longer referenced anywhere
+
+### AlertsList component
+- Updated to use backend field names: `alert.risk_level`, `alert.message`, `alert.region_name ?? alert.region_id`, `alert.created_at`
+- Title derived inline from `risk_level` (TITLE_MAP); time formatted inline from `created_at`
+- Removed `selectedZone` prop — zone highlight via fuzzy string match was fragile and is no longer needed
+- `alerts` prop type changed from mapped shape to `Alert[]` directly
+
+### AlertsManagementPage
+- All field references updated: `a.level` → `a.risk_level.toLowerCase()`, `alert.title` → synthesized inline,
+  `alert.description` → `alert.message`, `alert.zone` → `alert.region_name ?? alert.region_id`,
+  `alert.time` → formatted from `alert.created_at`
+- `alert.id` is now always string (non-optional); removed `alert.id &&` guard on dismiss
+
+### DashboardOverview — alert mini-card
+- `selectedZone: Zone | null` state removed; replaced with `selectedRegionId: string | null`
+- `handleAlertClick` now sets `selectedRegionId = alert.region_id` (direct UUID, no fuzzy match)
+- Mini-card wired to `useRegionDetail(selectedRegionId)` — hits GET /regions/{id} on click
+- Mini-card renders real backend fields only: name, risk_level chip, ML confidence bar, description, last predicted timestamp
+- Removed fabricated fields: rainfall, river level, river capacity bar (backend doesn't provide these per region)
+- `DashMap` `onZoneSelect` prop removed (selectedZone state gone; map zone selection was unused after this change)
+
+---
+
+## Task 8 — Wire Weekly Rainfall chart to real backend
+Status: DONE
+Files changed:
+- src/types.ts
+- src/hooks/useData.ts
+- src/services/api.ts
+- src/pages/dashboard/DashboardOverview.tsx
+
+### Zone type
+- Added `regionId: string` to `Zone` interface to preserve the backend UUID alongside the numeric display `id`
+- `useZones()` mapping now populates `regionId: r.id`
+
+### API
+- Added `getRegionSensorReadings(regionId, source?, limit?)` → `GET /regions/{id}/sensor-readings?source=nasa_power&limit=7`
+
+### Hook
+- Added `useRainfallData(regionId: string | null)`:
+  - `regionId = null` → `noSubscription = true`, `data = []` (no mock fallback)
+  - `regionId` provided but no rows → `data = []`
+  - Filters rows where `rainfall_mm` is non-null, maps `recorded_at` → short day label, reverses to chronological order
+  - Returns `{ data, loading, noSubscription }`
+
+### DashboardOverview — Rainfall panel
+- Removed old `rainfallData` block (was analytics fallback → RAINFALL_DATA mock)
+- Removed `RAINFALL_DATA` import from constants
+- Admin: `adminRainfallRegionId` state; `<select>` dropdown populated from `zones`; defaults to `zones[0].regionId`
+- User: uses `firstRegionId` from subscriptions
+- Three empty states: no subscription message, loading spinner text, no data yet message
+- No mock data used anywhere in this panel
+
+---
+
+## Task 9 — DashboardOverview cleanup + bug fixes
+Status: DONE
+Files changed:
+- src/hooks/useData.ts
+- src/components/dashboard/DashMap.tsx
+- src/components/dashboard/Charts.tsx
+- src/pages/dashboard/DashboardOverview.tsx
+- src/utils/helpers.ts
+
+### Bug fixes
+- 422 on sensor readings: `useZones()` started with ZONES mock (regionId '1','2'…); changed initial state to `[]`; added `zonesLoading` guard on `rainfallRegionId`
+- Map container already initialized: init effect had `displayZones` in deps causing destroy/re-create on zone load; removed it (`[]` deps); added `if (mapRef.current) return` inside `init()` to guard against StrictMode double-fire
+- Rainfall chart bars invisible: CSS `flex:1` on `.db-bar-fill` overrode inline `height:%`; fixed with `alignItems:'stretch'` on bars container, `justifyContent:'flex-end'` on columns, `flex:'none'` on fill
+
+### Rainfall chart
+- Switched source from `openweather` (30-min readings, all 0mm today) to `nasa_power` (daily aggregates)
+- Removed `rainfall_mm !== null` filter — nulls treated as 0mm so all 7 days always render
+- Switched from `BarChart` to `LineChart` with `height={200}`
+- Added optional `height` prop to `LineChart` (default 80, ML chart unaffected)
+
+### Zones table (DashboardOverview)
+- Removed entirely — redundant with ML Predictions panel above it and the AnalyticsPage table
+- Removed `Fragment`, `TREND_ICON`, `TREND_COLOR`, `tableExpandedZoneId`, `riverData`, `RIVER_DATA`
+
+### formatDateTime utility
+- Added `FORMATS` + `formatDateTime(date, format)` using dayjs to `src/utils/helpers.ts`
+
+---
+
+## Task 10 — AnalyticsPage full rewrite
+Status: DONE
+Files changed:
+- src/services/api.ts
+- src/hooks/useData.ts
+- src/pages/dashboard/AnalyticsPage.tsx
+
+### API additions
+- `getRegionSensorReadingLatest(regionId, source?)` → `GET /regions/{id}/sensor-readings/latest`
+- `subscribe(regionId)` → `POST /subscriptions { region_id }`
+- `unsubscribe(regionId)` → `DELETE /subscriptions/{region_id}`
+
+### Hook additions
+- `useAvgRainfall()`: fetches NASA POWER readings for all 5 regions in parallel, averages non-null `rainfall_mm` values
+
+### AnalyticsPage
+- Replaced entire mock-data page with real-data implementation
+- 2 metric cards: Critical Zones (from zones data), Avg Rainfall (useAvgRainfall)
+- Regions table: expandable rows; sensor reading fetched lazily on first expand, cached after
+- Predict button (admin only) → POST /predict, shows risk + confidence + "Live Sensor" badge inline
+- Subscribe/Unsubscribe button (user only) → toggles based on current subscriptions, refreshes list after action
+- All styling follows db-panel / db-zone-table / zd-mini-card / db-btn-sm patterns

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -5,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.alert import Alert, AlertStatus
 from app.models.user import Users
+from app.models.user_region_subscription import UserRegionSubscription
 from app.schemas.alert import AlertResponse
+from app.schemas.subscription import SubscriptionResponse
 from app.schemas.user import UserResponse
 from app.services import admin as admin_service
 from app.services.auth import require_admin
@@ -30,10 +34,27 @@ def list_all_alerts(
 def list_users(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    include_suspended: bool = Query(default=False),
     _admin: Users = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    return [UserResponse.model_validate(u) for u in admin_service.get_users_paginated(db, page, page_size)]
+    return [UserResponse.model_validate(u) for u in admin_service.get_users_paginated(db, page, page_size, include_suspended)]
+
+
+@router.get("/users/{user_id}/subscriptions", response_model=list[SubscriptionResponse])
+def get_user_subscriptions(
+    user_id: UUID,
+    _admin: Users = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(UserRegionSubscription)
+        .filter(
+            UserRegionSubscription.user_id == user_id,
+            UserRegionSubscription.is_deleted == False,  # noqa: E712
+        )
+        .all()
+    )
 
 
 @router.get("/stats")

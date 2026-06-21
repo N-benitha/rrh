@@ -3,14 +3,19 @@ import {
   Map,
   Bell,
   BarChart2,
-  MapPin,
+  // MapPin,
   FileText,
   Users,
   Settings,
   LogOut,
 } from "lucide-react";
 import { apiService } from "../../services/api";
+import { useIsAdmin } from "../../hooks/useData";
 import type { Page } from "../../types";
+
+function getInitials(name: string): string {
+  return name.split(" ").map((n) => n[0] ?? "").join("").toUpperCase().slice(0, 2);
+}
 
 interface SidebarProps {
   active: string;
@@ -23,7 +28,7 @@ const NAV_ITEMS = [
   { id: "map",        label: "Live Map",    Icon: Map,     badge: "5" },
   { id: "alerts",     label: "Alerts",      Icon: Bell,    badge: "3", badgeRed: true },
   { id: "analytics",  label: "Analytics",   Icon: BarChart2 },
-  { id: "zones",      label: "Risk Zones",  Icon: MapPin },
+  // { id: "zones",      label: "Risk Zones",  Icon: MapPin },
   { id: "reports",    label: "Reports",     Icon: FileText },
   { id: "users",      label: "Users",       Icon: Users },
 ];
@@ -34,6 +39,11 @@ const NAV_BOTTOM = [
 ];
 
 export default function DashSidebar({ active, setActive, setPage }: SidebarProps) {
+  const { profile } = useIsAdmin();
+  const displayName = profile?.name ?? "—";
+  const displayRole = profile?.role ?? "—";
+  const initials = profile?.name ? getInitials(profile.name) : "—";
+
   return (
     <div className="db-sidebar">
       <div className="sb-brand">
@@ -82,10 +92,10 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
         ))}
 
         <div className="sb-user" onClick={() => setActive("profile")} style={{ marginTop: "16px", cursor: "pointer" }}>
-          <div className="sb-avatar">YT</div>
+          <div className="sb-avatar">{initials}</div>
           <div>
-            <div className="sb-uname">Yvette Tuyizere</div>
-            <div className="sb-urole">Analyst · Observer</div>
+            <div className="sb-uname">{displayName}</div>
+            <div className="sb-urole">{displayRole}</div>
           </div>
         </div>
       </div>

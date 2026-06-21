@@ -10,8 +10,8 @@ from app.models.user import Users
 from app.repositories import user_repository
 
 
-def get_users_paginated(db: Session, page: int, page_size: int) -> list[Users]:
-    all_users = user_repository.get_all(db)
+def get_users_paginated(db: Session, page: int, page_size: int, include_suspended: bool = False) -> list[Users]:
+    all_users = user_repository.get_all_including_suspended(db) if include_suspended else user_repository.get_all(db)
     offset = (page - 1) * page_size
     return all_users[offset : offset + page_size]
 

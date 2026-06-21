@@ -19,6 +19,14 @@ def get_all(db: Session) -> list[Users]:
     return db.query(Users).filter(Users.is_deleted == False).all()
 
 
+def get_all_including_suspended(db: Session) -> list[Users]:
+    return db.query(Users).all()
+
+
+def get_by_id_any(db: Session, user_id: UUID | str) -> Users | None:
+    return db.query(Users).filter(Users.id == user_id).first()
+
+
 def create(
     db: Session,
     name: str,

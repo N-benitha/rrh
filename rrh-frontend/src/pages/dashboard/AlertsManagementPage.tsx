@@ -30,7 +30,7 @@ export default function AlertsManagementPage() {
   const [ruleSuccess, setRuleSuccess] = useState(false);
 
   const filtered =
-    filterLevel === "all" ? alerts : alerts.filter((a) => a.level === filterLevel);
+    filterLevel === "all" ? alerts : alerts.filter((a) => a.risk_level.toLowerCase() === filterLevel);
 
   const dismiss = async (id: string) => {
     await markRead(id);
@@ -56,19 +56,19 @@ export default function AlertsManagementPage() {
         </div>
         <div className="am-stat-item">
           <div className="am-stat-val" style={{ color: "#DC2626" }}>
-            {alerts.filter((a) => a.level === "critical").length}
+            {alerts.filter((a) => a.risk_level.toLowerCase() === "critical").length}
           </div>
           <div className="am-stat-lbl">🔴 Critical</div>
         </div>
         <div className="am-stat-item">
           <div className="am-stat-val" style={{ color: "#F97316" }}>
-            {alerts.filter((a) => a.level === "high").length}
+            {alerts.filter((a) => a.risk_level.toLowerCase() === "high").length}
           </div>
           <div className="am-stat-lbl">🟠 High</div>
         </div>
         <div className="am-stat-item">
           <div className="am-stat-val" style={{ color: "#EAB308" }}>
-            {alerts.filter((a) => a.level === "moderate").length}
+            {alerts.filter((a) => a.risk_level.toLowerCase() === "moderate").length}
           </div>
           <div className="am-stat-lbl">🟡 Moderate</div>
         </div>
@@ -117,14 +117,14 @@ export default function AlertsManagementPage() {
                 <div className="am-alert-left">
                   <div
                     className="am-alert-indicator"
-                    style={{ background: COLORS[alert.level], borderColor: COLORS[alert.level] }}
+                    style={{ background: COLORS[alert.risk_level.toLowerCase()], borderColor: COLORS[alert.risk_level.toLowerCase()] }}
                   />
                   <div className="am-alert-content">
-                    <h3 className="am-alert-title">{alert.title}</h3>
-                    <p className="am-alert-desc">{alert.description}</p>
+                    <h3 className="am-alert-title">{alert.risk_level} Flood Risk Alert</h3>
+                    <p className="am-alert-desc">{alert.message}</p>
                     <div className="am-alert-meta">
-                      <span>🏘️ {alert.zone}</span>
-                      <span>⏱️ {alert.time}</span>
+                      <span>🏘️ {alert.region_name ?? alert.region_id}</span>
+                      <span>⏱️ {new Date(alert.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default function AlertsManagementPage() {
                   </button>
                   <button
                     className="am-btn-small am-btn-dismiss"
-                    onClick={() => alert.id && dismiss(alert.id)}
+                    onClick={() => dismiss(alert.id)}
                   >
                     Dismiss
                   </button>
@@ -147,25 +147,25 @@ export default function AlertsManagementPage() {
                 <div className="am-alert-detail">
                   <div className="am-detail-row">
                     <span className="am-detail-lbl">Level</span>
-                    <span className="am-detail-val" style={{ color: COLORS[alert.level], fontWeight: 700 }}>
-                      {LABELS[alert.level]}
+                    <span className="am-detail-val" style={{ color: COLORS[alert.risk_level.toLowerCase()], fontWeight: 700 }}>
+                      {LABELS[alert.risk_level.toLowerCase()]}
                     </span>
                   </div>
                   <div className="am-detail-row">
                     <span className="am-detail-lbl">Zone</span>
-                    <span className="am-detail-val">{alert.zone}</span>
+                    <span className="am-detail-val">{alert.region_name ?? alert.region_id}</span>
                   </div>
                   <div className="am-detail-row">
                     <span className="am-detail-lbl">Status</span>
-                    <span className="am-detail-val">{alert.status ?? "—"}</span>
+                    <span className="am-detail-val">{alert.status}</span>
                   </div>
                   <div className="am-detail-row">
                     <span className="am-detail-lbl">Reported</span>
-                    <span className="am-detail-val">{alert.time}</span>
+                    <span className="am-detail-val">{new Date(alert.created_at).toLocaleString()}</span>
                   </div>
                   <div className="am-detail-row am-detail-full">
                     <span className="am-detail-lbl">Full Description</span>
-                    <span className="am-detail-val">{alert.description}</span>
+                    <span className="am-detail-val">{alert.message}</span>
                   </div>
                 </div>
               )}

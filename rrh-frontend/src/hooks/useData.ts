@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiService } from "../services/api";
-import { ZONES, ALERTS, RAINFALL_DATA, RIVER_DATA, ML_HISTORY } from "../constants";
-import type { Zone } from "../types";
+import { ZONES, RAINFALL_DATA, RIVER_DATA, ML_HISTORY } from "../constants";
+import type { Alert, Zone } from "../types";
 
 // ── Generic fetcher ────────────────────────────────────────────────────────
 
@@ -70,7 +70,7 @@ export function useDashboardStats() {
 // ── Zones ─────────────────────────────────────────────────────────────────
 
 export function useZones() {
-  const [zones, setZones] = useState<Zone[]>(ZONES);   // start with mock data
+  const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,6 +95,7 @@ export function useZones() {
             : 0;
           return {
             id: i + 1,
+            regionId: r.id,
             name: r.name,
             region: r.name,
             lat: r.latitude,
@@ -119,37 +120,8 @@ export function useZones() {
 
 // ── Alerts ────────────────────────────────────────────────────────────────
 
-export interface AlertItem {
-  id?: string;
-  level: "critical" | "high" | "moderate" | "low";
-  title: string;
-  description: string;
-  zone: string;
-  time: string;
-  status?: string;
-}
-
-const _LVL_MAP: Record<string, AlertItem["level"]> = {
-  crit: "critical",
-  critical: "critical",
-  high: "high",
-  mod: "moderate",
-  moderate: "moderate",
-  low: "low",
-};
-
-function _mockAlerts(): AlertItem[] {
-  return ALERTS.map((a) => ({
-    level: _LVL_MAP[a.lvl] ?? "low",
-    title: a.title,
-    description: a.desc,
-    zone: a.zone,
-    time: a.time,
-  }));
-}
-
 export function useAlerts() {
-  const [alerts, setAlerts] = useState<AlertItem[]>(_mockAlerts());
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -170,31 +142,12 @@ export function useAlerts() {
         }
       }
 
-      if (alertResult.status === "rejected") {
-        throw alertResult.reason;
-      }
+      if (alertResult.status === "rejected") throw alertResult.reason;
 
       const data = alertResult.value;
-      if (Array.isArray(data) && data.length > 0) {
-        const titleMap: Record<string, string> = {
-          critical: "Critical Flood Risk Alert",
-          high: "High Flood Risk Alert",
-          moderate: "Moderate Flood Risk Warning",
-          low: "Low Flood Risk Notice",
-        };
+      if (Array.isArray(data)) {
         setAlerts(
-          data.map((a) => {
-            const level = _LVL_MAP[a.risk_level.toLowerCase()] ?? "low";
-            return {
-              id: a.id,
-              level,
-              title: titleMap[level] ?? "Flood Risk Alert",
-              description: a.message,
-              zone: regionMap.get(a.region_id) ?? a.region_id,
-              time: new Date(a.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-              status: a.status,
-            };
-          })
+          data.map((a) => ({ ...a, region_name: regionMap.get(a.region_id) }))
         );
       }
     } catch (err) {
@@ -346,6 +299,81 @@ export function useRegionDetail(regionId: string | null) {
     () => regionId ? (apiService.getZoneDetail(regionId) as Promise<RegionDetail>) : Promise.resolve(null),
     [regionId]
   );
+}
+
+// ── Rainfall data ─────────────────────────────────────────────────────────
+
+export interface RainfallPoint {
+  day: string;
+  mm: number;
+}
+
+export function useRainfallData(regionId: string | null) {
+  const [data, setData] = useState<RainfallPoint[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [noSubscription, setNoSubscription] = useState(false);
+
+  useEffect(() => {
+    if (!regionId) {
+      setData([]);
+      setNoSubscription(true);
+      setLoading(false);
+      return;
+    }
+    setNoSubscription(false);
+    setLoading(true);
+    apiService
+      .getRegionSensorReadings(regionId, "nasa_power", 7)
+      .then((rows) => {
+        const points = rows
+          .map((r) => ({
+            day: new Date(r.recorded_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
+            mm: r.rainfall_mm ?? 0,
+          }))
+          .reverse();
+        setData(points);
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, [regionId]);
+
+  return { data, loading, noSubscription };
+}
+
+// ── Average rainfall across all regions ───────────────────────────────────
+
+export function useAvgRainfall() {
+  const [avgRainfall, setAvgRainfall] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiService
+      .getZones()
+      .then(async (regions) => {
+        if (!Array.isArray(regions) || regions.length === 0) return;
+        const results = await Promise.allSettled(
+          (regions as { id: string }[]).map((r) =>
+            apiService.getRegionSensorReadings(r.id, "nasa_power", 7)
+          )
+        );
+        const values: number[] = [];
+        for (const r of results) {
+          if (r.status === "fulfilled") {
+            for (const row of r.value) {
+              if (row.rainfall_mm !== null) values.push(row.rainfall_mm);
+            }
+          }
+        }
+        if (values.length > 0) {
+          const avg = values.reduce((s, v) => s + v, 0) / values.length;
+          setAvgRainfall(Math.round(avg * 100) / 100);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { avgRainfall, loading };
 }
 
 // ── Local storage ──────────────────────────────────────────────────────────

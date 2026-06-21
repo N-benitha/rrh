@@ -4,7 +4,6 @@ import DashSidebar from "../../components/dashboard/DashSidebar";
 import DashTopBar from "../../components/dashboard/DashTopBar";
 import DashboardOverview from "./DashboardOverview";
 import DashMap from "../../components/dashboard/DashMap";
-import ZoneDetailPage from "./ZoneDetailPage";
 import AlertsManagementPage from "./AlertsManagementPage";
 import AnalyticsPage from "./AnalyticsPage";
 import ReportsPage from "./ReportsPage";
@@ -14,7 +13,6 @@ import { NotificationsPage } from "./NotificationsPage";
 import { ThresholdsPage } from "./ThresholdsPage";
 import { AppearancePage } from "./AppearancePage";
 import { DataPrivacyPage } from "./DataPrivacyPage";
-import { PersonalInfoPage } from "./PersonalInfoPage";
 import { ChangePasswordPage } from "./ChangePasswordPage";
 import { AccountActionsPage } from "./AccountActionsPage";
 import { SignOutPage } from "./SignOutPage";
@@ -62,9 +60,9 @@ export default function Dashboard({ setPage }: PageProps) {
             )}
             {activeNav === "alerts" && <AlertsManagementPage />}
             {activeNav === "analytics" && <AnalyticsPage />}
-            {activeNav === "zones" && (
+            {/* {activeNav === "zones" && (
               <ZoneDetailPage zoneId={1} onBack={() => setActiveNav("overview")} onNavigate={setActiveNav} />
-            )}
+            )} */}
             {activeNav === "reports" && <ReportsPage />}
             {activeNav === "users" && <UserManagementPage />}
             {activeNav === "settings" && <SettingsPage />}
@@ -73,7 +71,6 @@ export default function Dashboard({ setPage }: PageProps) {
             {activeNav === "appearance" && <AppearancePage />}
             {activeNav === "privacy" && <DataPrivacyPage />}
             {activeNav === "profile" && <ProfilePage setPage={setPage} />}
-            {activeNav === "personalinfo" && <PersonalInfoPage />}
             {activeNav === "password" && <ChangePasswordPage />}
             {activeNav === "account" && <AccountActionsPage />}
             {activeNav === "signout" && <SignOutPage setPage={setPage} />}

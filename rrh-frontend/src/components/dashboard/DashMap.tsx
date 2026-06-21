@@ -199,7 +199,7 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
 
     const init = () => {
       const L = (window as WindowWithLeaflet).L;
-      if (!L || !ref.current) return;
+      if (!L || !ref.current || mapRef.current) return;
 
       const map = L.map(ref.current, {
         center: [-1.95, 30.05],
@@ -234,7 +234,7 @@ export default function DashMap({ zones, selectedZone, onZoneSelect }: DashMapPr
         mapRef.current = null;
       }
     };
-  }, [renderMarkers, displayZones]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const L = (window as WindowWithLeaflet).L;
