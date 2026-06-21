@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiService } from "../../services/api";
 import { useIdleTimeout } from "../../hooks/useIdleTimeout";
 import type { PageProps } from "../../types";
@@ -23,8 +23,30 @@ import { SignOutPage } from "./SignOutPage";
 import UserManagementPage from "./UserManagementPage";
 import LiveTickerBanner from "../../components/dashboard/LiveTickerBanner";
 
+const PAGE_ROLES: Record<string, string[]> = {
+  analytics: ["analyst","zone_manager","admin","superadmin"],
+  zones:     ["analyst","zone_manager","admin","superadmin"],
+  reports:   ["analyst","admin","superadmin"],
+  users:     ["admin","superadmin"],
+};
+
+function AccessDenied() {
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"60vh", gap:12, color:"var(--n500)" }}>
+      <div style={{ fontSize:48 }}>🔒</div>
+      <div style={{ fontSize:20, fontWeight:700, color:"var(--n800)" }}>Access Restricted</div>
+      <div style={{ fontSize:14 }}>You don't have permission to view this page.</div>
+    </div>
+  );
+}
+
 export default function Dashboard({ setPage }: PageProps) {
   const [activeNav, setActiveNav] = useState("overview");
+  const [userRole, setUserRole] = useState("resident");
+
+  useEffect(() => {
+    apiService.validateToken().then((u) => setUserRole(u.role?.toLowerCase() || "resident")).catch(() => {});
+  }, []);
 
   const handleLogout = () => {
     apiService.clearAuth();
@@ -76,7 +98,7 @@ export default function Dashboard({ setPage }: PageProps) {
         </div>
       )}
       <div className="db-container">
-        <DashSidebar active={activeNav} setActive={setActiveNav} setPage={setPage} />
+        <DashSidebar active={activeNav} setActive={setActiveNav} setPage={setPage} userRole={userRole} />
         <div className="db-main">
           <DashTopBar title={getTitle()} />
           <div className="db-content">
@@ -87,12 +109,12 @@ export default function Dashboard({ setPage }: PageProps) {
               </div>
             )}
             {activeNav === "alerts" && <AlertsManagementPage />}
-            {activeNav === "analytics" && <AnalyticsPage />}
-            {activeNav === "zones" && (
+            {activeNav === "analytics" && (PAGE_ROLES.analytics.includes(userRole) ? <AnalyticsPage /> : <AccessDenied />)}
+            {activeNav === "zones" && (PAGE_ROLES.zones.includes(userRole) ? (
               <ZoneDetailPage zoneId={1} onBack={() => setActiveNav("overview")} onNavigate={setActiveNav} />
-            )}
-            {activeNav === "reports" && <ReportsPage />}
-            {activeNav === "users" && <UserManagementPage />}
+            ) : <AccessDenied />)}
+            {activeNav === "reports" && (PAGE_ROLES.reports.includes(userRole) ? <ReportsPage /> : <AccessDenied />)}
+            {activeNav === "users" && (PAGE_ROLES.users.includes(userRole) ? <UserManagementPage /> : <AccessDenied />)}
             {activeNav === "settings" && <SettingsPage />}
             {activeNav === "notifications" && <NotificationsPage />}
             {activeNav === "thresholds" && <ThresholdsPage />}

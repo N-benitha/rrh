@@ -17,16 +17,17 @@ interface SidebarProps {
   active: string;
   setActive: (id: string) => void;
   setPage: (page: Page) => void;
+  userRole?: string;
 }
 
-const NAV_ITEMS = [
-  { id: "overview",   label: "Overview",    Icon: LayoutDashboard },
-  { id: "map",        label: "Live Map",    Icon: Map,     },
-  { id: "alerts",     label: "Alerts",      Icon: Bell,  },
-  { id: "analytics",  label: "Analytics",   Icon: BarChart2 },
-  { id: "zones",      label: "Risk Zones",  Icon: MapPin },
-  { id: "reports",    label: "Reports",     Icon: FileText },
-  { id: "users",      label: "Users",       Icon: Users },
+const ALL_NAV_ITEMS = [
+  { id: "overview",  label: "Overview",   Icon: LayoutDashboard, roles: ["resident","analyst","zone_manager","admin","superadmin"] },
+  { id: "map",       label: "Live Map",   Icon: Map,             roles: ["resident","analyst","zone_manager","admin","superadmin"] },
+  { id: "alerts",    label: "Alerts",     Icon: Bell,            roles: ["resident","analyst","zone_manager","admin","superadmin"] },
+  { id: "analytics", label: "Analytics",  Icon: BarChart2,       roles: ["analyst","zone_manager","admin","superadmin"] },
+  { id: "zones",     label: "Risk Zones", Icon: MapPin,          roles: ["analyst","zone_manager","admin","superadmin"] },
+  { id: "reports",   label: "Reports",    Icon: FileText,        roles: ["analyst","admin","superadmin"] },
+  { id: "users",     label: "Users",      Icon: Users,           roles: ["admin","superadmin"] },
 ];
 
 const NAV_BOTTOM = [
@@ -34,19 +35,21 @@ const NAV_BOTTOM = [
   { id: "logout",   label: "Sign out",  Icon: LogOut },
 ];
 
-export default function DashSidebar({ active, setActive, setPage }: SidebarProps) {
-  const [user, setUser] = useState({ full_name: "Yvette Tuyizere", role: "Admin" });
+export default function DashSidebar({ active, setActive, setPage, userRole }: SidebarProps) {
+  const [user, setUser] = useState({ full_name: "Yvette Tuyizere", role: userRole || "resident" });
 
   useEffect(() => {
     apiService.validateToken().then((u) => {
       setUser({
         full_name: u.full_name || "Yvette Tuyizere",
-        role: u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase() : "Admin",
+        role: u.role?.toLowerCase() || "resident",
       });
     }).catch(() => {});
   }, []);
 
   const initials = user.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const roleLabel = user.role.charAt(0).toUpperCase() + user.role.slice(1).replace("_", " ");
+  const navItems = ALL_NAV_ITEMS.filter((item) => item.roles.includes(user.role));
 
   return (
     <div className="db-sidebar">
@@ -63,7 +66,7 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
       </div>
 
       <nav className="sb-nav">
-        {NAV_ITEMS.map(({ id, label, Icon }) => (
+        {navItems.map(({ id, label, Icon }) => (
           <button
             key={id}
             className={`sb-item ${active === id ? "active" : ""}`}
@@ -98,7 +101,7 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
           <div className="sb-avatar">{initials}</div>
           <div>
             <div className="sb-uname">{user.full_name}</div>
-            <div className="sb-urole">{user.role}</div>
+            <div className="sb-urole">{roleLabel}</div>
           </div>
         </div>
       </div>
