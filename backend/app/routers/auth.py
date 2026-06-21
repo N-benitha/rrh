@@ -110,13 +110,13 @@ MOCK_USERS = {
     },
     "yvettetuyizere@gmail.com": {
         "id": 3, "email": "yvettetuyizere@gmail.com", "full_name": "Yvette Tuyizere",
-        "institution": "University of Rwanda", "role": UserRole.ADMIN,
+        "institution": "University of Rwanda", "role": UserRole.SUPERADMIN,
         "is_active": True, "hashed_password": get_password_hash("yvette123"),
         "created_at": datetime.now()
     },
     "tuyizere_221007271@stud.ur.ac.rw": {
         "id": 4, "email": "tuyizere_221007271@stud.ur.ac.rw", "full_name": "Yvette Tuyizere",
-        "institution": "University of Rwanda", "role": UserRole.ADMIN,
+        "institution": "University of Rwanda", "role": UserRole.SUPERADMIN,
         "is_active": True, "hashed_password": get_password_hash("yvette123"),
         "created_at": datetime.now()
     },
@@ -468,7 +468,7 @@ async def get_users(
         # Verify token and check admin role
         payload = verify_token(credentials.credentials)
         
-        if payload.get("role") != UserRole.ADMIN.value:
+        if (payload.get("role") or "").lower() not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin access required"
@@ -519,7 +519,8 @@ async def admin_create_user(
     db: Session = Depends(get_db)
 ):
     payload = verify_token(credentials.credentials)
-    if payload.get("role") != UserRole.ADMIN.value:
+    caller_role = (payload.get("role") or "").lower()
+    if caller_role not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     if db.query(UserEntity).filter(UserEntity.email == body.email).first():
@@ -556,7 +557,7 @@ async def update_user_role(
     db: Session = Depends(get_db)
 ):
     payload = verify_token(credentials.credentials)
-    if payload.get("role") != UserRole.ADMIN.value:
+    if (payload.get("role") or "").lower() not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     user = db.query(UserEntity).filter(UserEntity.id == user_id).first()
@@ -579,7 +580,7 @@ async def toggle_user_status(
     db: Session = Depends(get_db)
 ):
     payload = verify_token(credentials.credentials)
-    if payload.get("role") != UserRole.ADMIN.value:
+    if (payload.get("role") or "").lower() not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     user = db.query(UserEntity).filter(UserEntity.id == user_id).first()
@@ -598,7 +599,7 @@ async def delete_user(
     db: Session = Depends(get_db)
 ):
     payload = verify_token(credentials.credentials)
-    if payload.get("role") != UserRole.ADMIN.value:
+    if (payload.get("role") or "").lower() not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     user = db.query(UserEntity).filter(UserEntity.id == user_id).first()
