@@ -527,7 +527,7 @@ async def admin_create_user(
         raise HTTPException(status_code=400, detail="Email already registered")
 
     try:
-        role = UserRole(body.role.upper())
+        role = UserRole(body.role.lower())
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid role: {body.role}")
 
