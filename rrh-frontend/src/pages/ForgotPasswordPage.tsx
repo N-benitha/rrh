@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { AuthSide } from "../components/shared";
-import type { PageProps } from "../types";
 
 const CSS = `
   .auth-wrap{min-height:100vh;display:grid;grid-template-columns:45fr 55fr;background:var(--s900)}
@@ -33,7 +33,8 @@ const CSS = `
   @media(max-width:680px){.auth-form-area{padding:24px 18px}}
 `;
 
-export default function ForgotPasswordPage({ setPage }: PageProps) {
+export default function ForgotPasswordPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,7 @@ export default function ForgotPasswordPage({ setPage }: PageProps) {
       />
       <div className="auth-form-area">
         <div className="auth-box">
-          <button className="auth-back" onClick={() => setPage("login")}>
+          <button className="auth-back" onClick={() => navigate("/login")}>
             ← Back to sign in
           </button>
           {step === 1 ? (
@@ -104,7 +105,7 @@ export default function ForgotPasswordPage({ setPage }: PageProps) {
                 <strong style={{ color: "var(--s600)" }}>{email}</strong>
               </p>
               <div className="msg msg-ok">✓ Link valid for 30 minutes. Check spam if needed.</div>
-              <button className="btn-sub" onClick={() => setPage("login")}>
+              <button className="btn-sub" onClick={() => navigate("/login")}>
                 Return to sign in →
               </button>
               <div className="form-switch" style={{ marginTop: 12 }}>

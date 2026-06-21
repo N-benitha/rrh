@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import type { PageProps } from '../../types';
+import { useNavigate } from 'react-router';
+import { apiService } from '../../services/api';
 
-export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
+export const SignOutPage: React.FC = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -15,12 +17,10 @@ export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
     // Simulate logout API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Clear auth data
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userInfo');
+    apiService.clearAuth();
     
     setIsLoading(false);
-    setPage('landing');
+    navigate('/');
   };
 
   const handleCancel = () => {
@@ -83,7 +83,7 @@ export const SignOutPage: React.FC<PageProps> = ({ setPage }) => {
           <div className="so-actions">
             <button
               className="so-btn-cancel"
-              onClick={() => setPage('dashboard')}
+              onClick={() => navigate('/dashboard')}
             >
               ← Return to Dashboard
             </button>

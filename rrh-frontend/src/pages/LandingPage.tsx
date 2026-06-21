@@ -1,7 +1,7 @@
+import { useNavigate } from "react-router";
 import "../styles/landing.css";
 import { FEATURES,} from "../constants";
 import { Footer } from "../components/shared";
-import type { PageProps } from "../types";
 
 
 
@@ -13,7 +13,8 @@ const STATS: [string, string, string][] = [
   ["15 min", "Data refresh",   "#1a3a6c"],
 ];
 
-export default function LandingPage({ setPage }: PageProps) {
+export default function LandingPage() {
+  const navigate = useNavigate();
   return (
     <div className="page">
 
@@ -40,8 +41,8 @@ export default function LandingPage({ setPage }: PageProps) {
             </p>
 
             <div className="lp-btns">
-              <button className="lp-btn-o" onClick={() => setPage("register")}>Get Access →</button>
-              <button className="lp-btn-g" onClick={() => setPage("help")}>How It Works</button>
+              <button className="lp-btn-o" onClick={() => navigate("/register")}>Get Access →</button>
+              <button className="lp-btn-g" onClick={() => navigate("/help")}>How It Works</button>
             </div>
 
           </div>
@@ -97,8 +98,8 @@ export default function LandingPage({ setPage }: PageProps) {
             </p>
           </div>
           <div className="lp-cta-btns">
-            <button className="lp-btn-w"  onClick={() => setPage("register")}>Get Access →</button>
-            <button className="lp-btn-ol" onClick={() => setPage("help")}>Learn More</button>
+            <button className="lp-btn-w"  onClick={() => navigate("/register")}>Get Access →</button>
+            <button className="lp-btn-ol" onClick={() => navigate("/help")}>Learn More</button>
           </div>
         </div>
       </section>

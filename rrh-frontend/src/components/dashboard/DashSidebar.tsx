@@ -1,9 +1,10 @@
+import React from "react";
+import { useNavigate, useLocation } from "react-router";
 import {
   LayoutDashboard,
   Map,
   Bell,
   BarChart2,
-  // MapPin,
   FileText,
   Users,
   Settings,
@@ -11,38 +12,40 @@ import {
 } from "lucide-react";
 import { apiService } from "../../services/api";
 import { useIsAdmin } from "../../hooks/useData";
-import type { Page } from "../../types";
 
 function getInitials(name: string): string {
   return name.split(" ").map((n) => n[0] ?? "").join("").toUpperCase().slice(0, 2);
 }
 
-interface SidebarProps {
-  active: string;
-  setActive: (id: string) => void;
-  setPage: (page: Page) => void;
+interface NavItem {
+  id: string;
+  path: string;
+  label: string;
+  Icon: React.ComponentType<{ size?: number }>;
+  badge?: string;
+  badgeRed?: boolean;
+  adminOnly?: boolean;
 }
 
-const NAV_ITEMS = [
-  { id: "overview",   label: "Overview",    Icon: LayoutDashboard },
-  { id: "map",        label: "Live Map",    Icon: Map,     badge: "5" },
-  { id: "alerts",     label: "Alerts",      Icon: Bell,    badge: "3", badgeRed: true },
-  { id: "analytics",  label: "Analytics",   Icon: BarChart2 },
-  // { id: "zones",      label: "Risk Zones",  Icon: MapPin },
-  { id: "reports",    label: "Reports",     Icon: FileText },
-  { id: "users",      label: "Users",       Icon: Users },
+const NAV_ITEMS: NavItem[] = [
+  { id: "overview",  path: "/dashboard",          label: "Overview",   Icon: LayoutDashboard },
+  { id: "map",       path: "/dashboard/map",       label: "Live Map",   Icon: Map,       badge: "5" },
+  { id: "alerts",    path: "/dashboard/alerts",    label: "Alerts",     Icon: Bell,      badge: "3", badgeRed: true },
+  { id: "analytics", path: "/dashboard/analytics", label: "Analytics",  Icon: BarChart2, adminOnly: true },
+  { id: "reports",   path: "/dashboard/reports",   label: "Reports",    Icon: FileText },
+  { id: "users",     path: "/dashboard/users",     label: "Users",      Icon: Users,     adminOnly: true },
 ];
 
-const NAV_BOTTOM = [
-  { id: "settings", label: "Settings",  Icon: Settings },
-  { id: "logout",   label: "Sign out",  Icon: LogOut },
-];
-
-export default function DashSidebar({ active, setActive, setPage }: SidebarProps) {
-  const { profile } = useIsAdmin();
+export default function DashSidebar() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { isAdmin, profile } = useIsAdmin();
   const displayName = profile?.name ?? "—";
   const displayRole = profile?.role ?? "—";
   const initials = profile?.name ? getInitials(profile.name) : "—";
+
+  const isActive = (path: string) =>
+    path === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(path);
 
   return (
     <div className="db-sidebar">
@@ -59,11 +62,11 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
       </div>
 
       <nav className="sb-nav">
-        {NAV_ITEMS.map(({ id, label, Icon, badge, badgeRed }) => (
+        {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(({ id, path, label, Icon, badge, badgeRed }) => (
           <button
             key={id}
-            className={`sb-item ${active === id ? "active" : ""}`}
-            onClick={() => setActive(id)}
+            className={`sb-item ${isActive(path) ? "active" : ""}`}
+            onClick={() => navigate(path)}
           >
             <Icon size={16} />
             <span>{label}</span>
@@ -73,25 +76,30 @@ export default function DashSidebar({ active, setActive, setPage }: SidebarProps
       </nav>
 
       <div className="sb-foot">
-        {NAV_BOTTOM.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            className="sb-item"
-            onClick={() => {
-              if (id === "logout") {
-                apiService.clearAuth();
-                setPage("landing");
-              } else {
-                setActive(id);
-              }
-            }}
-          >
-            <Icon size={16} />
-            <span>{label}</span>
-          </button>
-        ))}
+        <button
+          className={`sb-item ${isActive("/dashboard/settings") ? "active" : ""}`}
+          onClick={() => navigate("/dashboard/settings")}
+        >
+          <Settings size={16} />
+          <span>Settings</span>
+        </button>
 
-        <div className="sb-user" onClick={() => setActive("profile")} style={{ marginTop: "16px", cursor: "pointer" }}>
+        <button
+          className="sb-item"
+          onClick={() => {
+            apiService.clearAuth();
+            navigate("/");
+          }}
+        >
+          <LogOut size={16} />
+          <span>Sign out</span>
+        </button>
+
+        <div
+          className="sb-user"
+          onClick={() => navigate("/dashboard/profile")}
+          style={{ marginTop: "16px", cursor: "pointer" }}
+        >
           <div className="sb-avatar">{initials}</div>
           <div>
             <div className="sb-uname">{displayName}</div>

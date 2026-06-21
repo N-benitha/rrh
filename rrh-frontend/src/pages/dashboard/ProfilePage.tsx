@@ -1,7 +1,8 @@
 import { useState } from "react";
-import type { PageProps } from "../../types";
+import { useNavigate } from "react-router";
 
-export default function ProfilePage({ setPage }: PageProps) {
+export default function ProfilePage() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
     name: "Yvette Tuyizere",
     email: "yvette@rrh.org",
@@ -34,7 +35,7 @@ export default function ProfilePage({ setPage }: PageProps) {
   };
 
   const handleSignOut = () => {
-    setPage("landing");
+    navigate("/");
   };
 
   return (

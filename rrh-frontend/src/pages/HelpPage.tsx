@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { FAQS } from "../constants";
 import { Footer } from "../components/shared";
-import type { PageProps } from "../types";
 
 const CSS = `
   .inner-top{padding:96px 40px 44px;background:var(--s900);border-bottom:1px solid var(--s700)}
@@ -51,7 +51,8 @@ const CSS = `
   @media(max-width:680px){.inner-top{padding:72px 18px 32px}.sec{padding:48px 18px}}
 `;
 
-export default function HelpPage({ setPage }: PageProps) {
+export default function HelpPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<number | null>(null);
 
@@ -149,7 +150,7 @@ export default function HelpPage({ setPage }: PageProps) {
                 Contact the RRH development team directly.
               </div>
             </div>
-            <button className="btn-hero" onClick={() => setPage("login")}>
+            <button className="btn-hero" onClick={() => navigate("/login")}>
               Sign in for support
             </button>
           </div>

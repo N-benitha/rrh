@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiService } from "../services/api";
-import { ZONES, RAINFALL_DATA, RIVER_DATA, ML_HISTORY } from "../constants";
+import { RAINFALL_DATA, RIVER_DATA, ML_HISTORY } from "../constants";
 import type { Alert, Zone } from "../types";
 
 // ── Generic fetcher ────────────────────────────────────────────────────────

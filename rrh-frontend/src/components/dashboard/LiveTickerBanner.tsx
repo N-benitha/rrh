@@ -1,43 +1,36 @@
 import { useAlerts } from "../../hooks/useData";
-import { ZONES } from "../../constants";
-import type { Zone } from "../../types";
 
 const LEVEL_ICON: Record<string, string> = {
-  critical: "🔴",
-  high:     "⚠️",
-  moderate: "ℹ️",
-  low:      "✓",
+  CRITICAL: "🔴",
+  HIGH:     "⚠️",
+  MODERATE: "ℹ️",
+  LOW:      "✓",
 };
 
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export default function LiveTickerBanner() {
-  const { alerts } = useAlerts();
+  const { alerts, loading } = useAlerts();
 
-  const isLive = alerts.length > 0;
+  let tickerText: string;
 
-  let tickerItems: string[];
-
-  if (isLive) {
-    tickerItems = [
-      "● LIVE", 
+  if (loading) {
+    tickerText = "● Fetching live alerts…";
+  } else if (alerts.length === 0) {
+    tickerText = "✓ No active alerts at this time   •   All monitored zones nominal   •   ↻ Updates every 5 min";
+  } else {
+    const items = [
+      "● LIVE",
       ...alerts.map(
         (a) =>
-          `${LEVEL_ICON[a.level] ?? "⚠️"} ${a.title} · ${a.zone} · ${a.time}`
+          `${LEVEL_ICON[a.risk_level] ?? "⚠️"} ${a.message} · ${a.region_name ?? a.region_id} · ${fmtTime(a.created_at)}`
       ),
       "↻ Updates every 5 min",
     ];
-  } else {
-    // Fallback: mock zones + alerts until real data arrives
-    tickerItems = [
-      "🔴 LIVE",
-      ...ZONES.map(
-        (z: Zone) =>
-          `${z.score}% Risk · ${z.name} · ${z.rainfall}/day · River ${z.river}`
-      ),
-      "↻ Updates every 5 min",
-    ];
+    tickerText = items.join("   •   ");
   }
-
-  const tickerText = tickerItems.join("   •   ");
 
   return (
     <div className="live-ticker-banner" style={{ backgroundColor: "#1a3a6c" }}>

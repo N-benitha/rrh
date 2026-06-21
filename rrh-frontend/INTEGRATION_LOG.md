@@ -2,6 +2,57 @@
 
 ---
 
+## Task — Routing Migration to react-router
+Status: DONE
+Files changed:
+- src/main.tsx (replaced RRHApp render with RouterProvider)
+- src/router.tsx (new — createBrowserRouter with all routes)
+- src/components/ProtectedRoute.tsx (new — redirects to /login if not authenticated)
+- src/components/PublicLayout.tsx (new — Navbar + Outlet wrapper for public pages)
+- src/components/shared/Navbar.tsx (useNavigate/useLocation, removed setPage/cur props)
+- src/components/dashboard/DashSidebar.tsx (useNavigate/useLocation, removed setActive/setPage props)
+- src/pages/dashboard/Dashboard.tsx (useLocation + Outlet, removed activeNav state and all sub-page imports)
+- src/pages/LandingPage.tsx
+- src/pages/LoginPage.tsx
+- src/pages/RegisterPage.tsx
+- src/pages/ForgotPasswordPage.tsx
+- src/pages/VerifyPage.tsx
+- src/pages/HelpPage.tsx
+- src/pages/AboutPage.tsx
+- src/pages/dashboard/ProfilePage.tsx
+- src/pages/dashboard/SignOutPage.tsx
+- src/App.tsx (deleted — was dead code, main.tsx never imported it)
+- src/pages/RRHApp.tsx (deleted — replaced by router.tsx + main.tsx)
+
+Route map:
+  /                    → LandingPage  (PublicLayout)
+  /login               → LoginPage    (PublicLayout)
+  /register            → RegisterPage (PublicLayout)
+  /help                → HelpPage     (PublicLayout)
+  /about               → AboutPage    (PublicLayout)
+  /forgot-password     → ForgotPasswordPage (no Navbar)
+  /verify              → VerifyPage   (no Navbar)
+  /dashboard           → DashboardOverview  (ProtectedRoute)
+  /dashboard/map       → DashMap
+  /dashboard/alerts    → AlertsManagementPage
+  /dashboard/analytics → AnalyticsPage
+  /dashboard/reports   → ReportsPage
+  /dashboard/users     → UserManagementPage
+  /dashboard/settings  → SettingsPage
+  /dashboard/profile   → ProfilePage
+  /dashboard/password  → ChangePasswordPage
+  /dashboard/account   → AccountActionsPage
+  /dashboard/sign-out  → SignOutPage
+
+Notes:
+- Page, PageProps in src/types.ts are now dead exports (kept to avoid touching RiskMap.tsx which imports PageProps but is itself dead code — not imported anywhere)
+- NotificationsPage, ThresholdsPage, AppearancePage, DataPrivacyPage are sub-components of SettingsPage, not routed separately
+- PersonalInfoPage was deleted by developer before migration (duplicate of ProfilePage)
+- ZoneDetailPage.tsx exists but is not routed — was commented out before migration, left as-is
+- FLAG: SignOutPage clears auth via localStorage.removeItem('authToken') directly instead of apiService.clearAuth(). This means apiService.isAuthenticated() still returns true in memory after sign-out via SignOutPage. ProtectedRoute uses apiService.isAuthenticated(), so a page refresh is needed for the redirect to kick in. DashSidebar logout button correctly calls apiService.clearAuth() and is the recommended sign-out path. SignOutPage should be updated to call apiService.clearAuth() — out of scope for this task.
+
+---
+
 ## Task 1 — Fix registration payload
 Status: DONE
 Files changed:

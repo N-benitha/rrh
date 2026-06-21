@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashMap from "../../components/dashboard/DashMap";
 import { LineChart } from "../../components/dashboard/Charts";
 import StatCards from "../../components/dashboard/StatCards";
