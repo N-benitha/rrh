@@ -9,6 +9,7 @@ import {
   Users,
   Settings,
   LogOut,
+  BellRing,
 } from "lucide-react";
 import { apiService } from "../../services/api";
 import type { Page } from "../../types";
@@ -21,13 +22,14 @@ interface SidebarProps {
 }
 
 const ALL_NAV_ITEMS = [
-  { id: "overview",  label: "Overview",   Icon: LayoutDashboard, roles: ["resident","analyst","zone_manager","admin","superadmin"] },
-  { id: "map",       label: "Live Map",   Icon: Map,             roles: ["resident","analyst","zone_manager","admin","superadmin"] },
-  { id: "alerts",    label: "Alerts",     Icon: Bell,            roles: ["resident","analyst","zone_manager","admin","superadmin"] },
-  { id: "analytics", label: "Analytics",  Icon: BarChart2,       roles: ["analyst","zone_manager","admin","superadmin"] },
-  { id: "zones",     label: "Risk Zones", Icon: MapPin,          roles: ["analyst","zone_manager","admin","superadmin"] },
-  { id: "reports",   label: "Reports",    Icon: FileText,        roles: ["analyst","admin","superadmin"] },
-  { id: "users",     label: "Users",      Icon: Users,           roles: ["admin","superadmin"] },
+  { id: "overview",       label: "Overview",       Icon: LayoutDashboard, roles: ["resident","analyst","zone_manager","admin","superadmin"] },
+  { id: "map",            label: "Live Map",       Icon: Map,             roles: ["resident","analyst","zone_manager","admin","superadmin"] },
+  { id: "alerts",         label: "Flood Alerts",   Icon: Bell,            roles: ["resident","analyst","zone_manager","admin","superadmin"] },
+  { id: "notifications",  label: "My Alerts",      Icon: BellRing,        roles: ["resident"] },
+  { id: "analytics",      label: "Analytics",      Icon: BarChart2,       roles: ["analyst","zone_manager","admin","superadmin"] },
+  { id: "zones",          label: "Risk Zones",     Icon: MapPin,          roles: ["analyst","zone_manager","admin","superadmin"] },
+  { id: "reports",        label: "Reports",        Icon: FileText,        roles: ["analyst","admin","superadmin"] },
+  { id: "users",          label: "Users",          Icon: Users,           roles: ["admin","superadmin"] },
 ];
 
 const NAV_BOTTOM = [
