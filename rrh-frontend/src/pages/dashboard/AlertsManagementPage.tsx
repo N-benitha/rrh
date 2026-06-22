@@ -38,6 +38,7 @@ function toLevel(level: string): AlertItem["lvl"] {
 const STATIC_ALERTS: AlertItem[] = ALERTS.map((a, i) => ({ ...a, id: i }));
 
 export default function AlertsManagementPage() {
+  const [userRole, setUserRole]         = useState("resident");
   const [alerts, setAlerts]             = useState<AlertItem[]>(STATIC_ALERTS);
   const [liveSource, setLiveSource]     = useState(false);
   const [loading, setLoading]           = useState(true);
@@ -56,6 +57,12 @@ export default function AlertsManagementPage() {
   const [msgForm, setMsgForm]           = useState({ title: "", body: "", level: "high" });
   const [msgSending, setMsgSending]     = useState(false);
   const [msgResult, setMsgResult]       = useState<{ ok: boolean; text: string } | null>(null);
+
+  const isResident = userRole === "resident";
+
+  useEffect(() => {
+    apiService.validateToken().then((u) => setUserRole(u.role?.toLowerCase() || "resident")).catch(() => {});
+  }, []);
 
   // Fetch live alerts and registered token count
   useEffect(() => {
@@ -252,23 +259,27 @@ export default function AlertsManagementPage() {
                   </div>
                 </div>
                 <div className="am-alert-actions">
-                  <button
-                    className="am-btn-small"
-                    style={{ background: COLORS[alert.lvl], color: "#fff", borderColor: COLORS[alert.lvl], opacity: notifying ? 0.6 : 1 }}
-                    disabled={notifying}
-                    onClick={() => sendNotification(alert)}
-                  >
-                    📱 Notify
-                  </button>
+                  {!isResident && (
+                    <button
+                      className="am-btn-small"
+                      style={{ background: COLORS[alert.lvl], color: "#fff", borderColor: COLORS[alert.lvl], opacity: notifying ? 0.6 : 1 }}
+                      disabled={notifying}
+                      onClick={() => sendNotification(alert)}
+                    >
+                      📱 Notify
+                    </button>
+                  )}
                   <button
                     className="am-btn-small"
                     onClick={() => setViewedId((prev) => (prev === alert.id ? null : alert.id))}
                   >
                     {viewedId === alert.id ? "Hide" : "View"}
                   </button>
-                  <button className="am-btn-small am-btn-dismiss" onClick={() => dismiss(alert.id)}>
-                    Dismiss
-                  </button>
+                  {!isResident && (
+                    <button className="am-btn-small am-btn-dismiss" onClick={() => dismiss(alert.id)}>
+                      Dismiss
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -346,8 +357,8 @@ export default function AlertsManagementPage() {
         </div>
       )}
 
-      {/* ── Send custom message ── */}
-      <div className="am-panel" style={{ marginBottom: 24 }}>
+      {/* ── Send custom message (admin/superadmin only) ── */}
+      {!isResident && <div className="am-panel" style={{ marginBottom: 24 }}>
         <h2 className="am-panel-title">📱 Send <map name=""></map>message to Mobile App</h2>
         {msgResult && (
           <div style={{
@@ -401,10 +412,10 @@ export default function AlertsManagementPage() {
             {msgSending ? "Sending…" : "📤 Send to Mobile App"}
           </button>
         </form>
-      </div>
+      </div>}
 
-      {/* ── Create alert rule ── */}
-      <div className="am-panel">
+      {/* ── Create alert rule (admin/superadmin only) ── */}
+      {!isResident && <div className="am-panel">
         <h2 className="am-panel-title">Create New Alert Rule — Sebeya River Basin</h2>
         {ruleSuccess && (
           <div className="am-success-banner">✅ Alert rule created successfully!</div>
@@ -457,7 +468,7 @@ export default function AlertsManagementPage() {
           </div>
           <button type="submit" className="am-btn-submit">➕ Create Alert Rule</button>
         </form>
-      </div>
+      </div>}
 
     </div>
   );
